@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <IncludePath>C:\Project\OpenCV4-VC\opencv\build\include\opencv2;C:\Project\OpenCV4-VC\opencv\build\include\;C:\Project\imgui;C:\Project\imgui\examples;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Project\OpenCV4-VC\opencv\build\x64\vc15\bin;C:\Project\OpenCV4-VC\opencv\build\x64\vc15\lib;$(DXSDK_DIR)/Lib/x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;C:\Project\imgui\;C:\Project\imgui\examples;C:\Project\imgui\examples\libs\glfw\include;C:\Project\imgui\examples\libs\gl3w;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3d9.lib;opengl32.lib;"C:\Project\imgui\examples\libs\glfw\lib-vc2010-64\glfw3.lib";"C:\Project\OpenCV4-VC\opencv\build\x64\vc15\lib\opencv_world400.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(DXSDK_DIR)/Lib/x64;C:\Project\imgui\examples\libs\glfw\lib-vc2010-64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
