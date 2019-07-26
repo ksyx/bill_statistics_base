@@ -12,6 +12,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;C:\Project\imgui\;C:\Project\imgui\examples;C:\Project\imgui\examples\libs\glfw\include;C:\Project\imgui\examples\libs\gl3w;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d9.lib;opengl32.lib;"C:\Project\imgui\examples\libs\glfw\lib-vc2010-64\glfw3.lib";"C:\Project\OpenCV4-VC\opencv\build\x64\vc15\lib\opencv_world400.lib";%(AdditionalDependencies)</AdditionalDependencies>

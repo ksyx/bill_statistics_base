@@ -32,6 +32,8 @@ static D3DPRESENT_PARAMETERS    g_d3dpp = {};
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void ResetDevice();
+void doStartFrame();
+void doEndFrame();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 /*
 // Main code
@@ -172,6 +174,33 @@ int main(int, char**) {
 	return 0;
 }
 */
+
+struct data {
+	int x, y;
+	bool operator < (const data& b) const {
+		return y > b.y;
+	}
+};
+int op, WinWidth = 680, WinHeight = 480;std::string str;cv::Mat mat1, mat2, canv, textarea, org, pp, fetchshow, show, passby, bicolor;cv::Rect rect, fetch;std::string WindowName;bool confirmed;
+int minx, miny, maxx, maxy, cntsa, cntsa_, trans, range[2][2];double positive, negative;bool fetched;
+std::vector<std::vector<int> >imgdata;
+std::vector<std::vector<int> >vis;
+std::vector<std::vector<int> >imgdata_;
+std::vector<std::vector<int> >vis_;
+std::vector<std::priority_queue<data> >textinfo;//x: val,y: posx
+std::vector<int>visca;
+std::vector<int>visarea;
+std::vector<int>emp;
+std::vector<data>cainfo[2];
+std::vector<data>areainfo[2];
+std::queue<data>que;
+std::vector<std::string>resultvec;
+std::priority_queue<data>pq_emp;
+int xd[4] = { -1,1,0,0 }, yd[4] = { 0,0,-1,1 }, id[20];char textbuffer[512];
+bool usegui;bool frameend;
+int lang;
+ImGuiIO tmpio;
+WNDCLASSEX wc;HWND hwnd;ImGuiIO& io = tmpio;ImVec4 clear_color;MSG msg;
 // Helper functions
 
 bool CreateDeviceD3D(HWND hWnd) {
@@ -230,28 +259,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	}
 	return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
-struct data {
-	int x, y;
-	bool operator < (const data& b) const {
-		return y > b.y;
-	}
-};
-int op, WinWidth = 680, WinHeight = 480;std::string str;cv::Mat mat1, mat2, canv, textarea, org, pp, fetchshow, show, passby, bicolor;cv::Rect rect, fetch;std::string WindowName;bool confirmed;
-int minx, miny, maxx, maxy, cntsa, cntsa_, trans, range[2][2];double positive, negative;bool fetched;
-std::vector<std::vector<int> >imgdata;
-std::vector<std::vector<int> >vis;
-std::vector<std::vector<int> >imgdata_;
-std::vector<std::vector<int> >vis_;
-std::vector<std::priority_queue<data> >textinfo;//x: val,y: posx
-std::vector<int>visca;
-std::vector<int>visarea;
-std::vector<int>emp;
-std::vector<data>cainfo[2];
-std::vector<data>areainfo[2];
-std::queue<data>que;
-std::priority_queue<data>pq_emp;
-int xd[4] = { -1,1,0,0 }, yd[4] = { 0,0,-1,1 }, id[20];
 void BFS_remove(int sx, int sy) {
 	//printf("%d %d\n",sx,sy);
 	data tmp, temp;
@@ -266,7 +273,7 @@ void BFS_remove(int sx, int sy) {
 		for (int i = 0;i < 4;i++) {
 			tmp = temp;
 			tmp.x += xd[i];tmp.y += yd[i];
-			if (tmp.x < 0 || tmp.y < 0 || tmp.x >= bicolor.rows || tmp.y >= bicolor.cols || !imgdata[tmp.y][tmp.x]) continue;
+			if (tmp.x < 0 || tmp.y < 0 || tmp.x >= bicolor.cols || tmp.y >= bicolor.rows || !imgdata[tmp.y][tmp.x]) continue;
 			imgdata[tmp.y][tmp.x] = 0;
 			cv::rectangle(bicolor, cv::Point(tmp.x, tmp.y), cv::Point(tmp.x, tmp.y), cv::Scalar(255, 255, 255), 1);
 			que.push(tmp);
@@ -493,16 +500,38 @@ void on_pick_mouse(int event, int x, int y, int flags, void* ustc) {
 	}
 }
 void DoFetchSample(int now) {
-	system("cls");
-	printf("The followings are important, read it if you are not familiar with the process.\n");
-	printf("Guide: double-left click on a black point to match sample and required information. If there is NO SUCH THING, double right-click on the image.\n");
-	printf("Note: close both the window or double-click middle key to confirm your choice, we will treat you as double right-clicked if you closed window without any VAILD point choosing and the ONLY way to cancel your choice is to double right-click before the window was closed.\n");
-	printf("Notice: once the window was closed, you can NOT go back, the ONLY way to change your choice is do the whole process again after completing all of the fetches THIS TIME.\n");
-	printf("There will be a window showing your choice.\n");
-	printf("Now Fetching: ");
-	if (now <= 9) printf("%d", now); else if (now == 10) printf("."); else if (now == 11) printf("+"); else if (now == 12) printf("-");
-	printf("\n");
-	printf("\n");
+	if (!usegui) {
+		system("cls");
+		printf("The followings are important, read it if you are not familiar with the process.\n");
+		printf("* Double left click on a black point to match sample and required information. If there is NO SUCH THING, double right-click on the image.\n");
+		printf("* Press Enter to confirm your choice.\n");
+		printf("Notice: once the window was closed, you can NOT go back, the ONLY way to change your choice is do the whole process again after completing all of the fetches THIS TIME.\n");
+		printf("There will be a window showing your choice.\n");
+		printf("Now Fetching: ");
+		if (now <= 9) printf("%d", now); else if (now == 10) printf("."); else if (now == 11) printf("+"); else if (now == 12) printf("-");
+		printf("\n");
+		printf("\n");
+	}
+	else {
+		for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+			if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+				continue;
+			}
+			doStartFrame();
+			ImGui::Begin("Guide on fetching samples", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Text("The followings are important, read it if you are not familiar with the process.");
+			ImGui::Text("* double left click on a black point to match sample and required information. If there is NO SUCH THING, double right-click on the image.");
+			ImGui::Text("* Press Enter to confirm your choice.");
+			ImGui::Text("Notice: once the window was closed, you can NOT go back, the ONLY way to change your choice is do the whole process again after completing all of the fetches THIS TIME.");
+			ImGui::Text("There will be a window showing your choice.");
+			ImGui::Text("Now Fetching: ");
+			ImGui::SameLine();
+			if (now <= 9) ImGui::Text("%d", now); else if (now == 10) ImGui::Text("."); else if (now == 11) ImGui::Text("+"); else if (now == 12) ImGui::Text("-");
+			doEndFrame();
+		}
+	}
 	cv::namedWindow("Point Picking");
 	trans = now;
 	passby = bicolor;
@@ -628,6 +657,32 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 char GetChar(int x) {
 	if (x <= 9)return x + '0'; else if (x == 10) return '.'; else if (x == 11) return '+'; else if (x == 12) return '-'; else return '?';
 }
+void doEndFrame() {
+	//ImGui::End();
+	ImGui::EndFrame();
+	g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, false);
+	g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
+	g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
+	D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * 255.0f), (int)(clear_color.y * 255.0f), (int)(clear_color.z * 255.0f), (int)(clear_color.w * 255.0f));
+	g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
+	if (g_pd3dDevice->BeginScene() >= 0) {
+		ImGui::Render();
+		ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+		g_pd3dDevice->EndScene();
+	}
+	HRESULT result = g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
+
+	// Handle loss of D3D9 device
+	if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+		ResetDevice();
+
+}
+void doStartFrame() {
+	// Start the Dear ImGui frame
+	ImGui_ImplDX9_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+}
 void Accumulate(std::string str) {
 	double ret = 0, awa = 0;int l = str.length(), p = -1;bool change = 0;
 	for (int i = 0;i < l;i++) {
@@ -652,10 +707,15 @@ accu:
 }
 int main() {
 	// Create application window
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
+	int guiWidth = 1280, guiHeight = 720;
+	printf("Would you like to use GUI? 0 for no, others for yes.");
+	scanf("%d", &usegui);
+	if (!usegui) {
+		guiWidth = 100;guiHeight = 100;
+	}
+	wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Bill Statistics GUI"), NULL };
 	::RegisterClassEx(&wc);
-	HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Bill Statistics GUI"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
-
+	hwnd = ::CreateWindow(wc.lpszClassName, _T("Bill Statistics GUI"), WS_OVERLAPPEDWINDOW, 100, 100, guiWidth, guiHeight, NULL, NULL, wc.hInstance, NULL);
 	// Initialize Direct3D
 	if (!CreateDeviceD3D(hwnd)) {
 		CleanupDeviceD3D();
@@ -670,7 +730,7 @@ int main() {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io = ImGui::GetIO(); (void)io;
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -696,16 +756,17 @@ int main() {
 	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
 	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 	//IM_ASSERT(font != NULL);
-
+	lang = 0;
+	if (lang == 1) io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/SimHei.ttf", 16.0f);
 	// Our state
 	bool show_demo_window = true;
 	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	// Main loop
-	MSG msg;
+
 	ZeroMemory(&msg, sizeof(msg));
-	while (msg.message != WM_QUIT) {
+	while (msg.message != WM_QUIT || !usegui) {
 		// Poll and handle messages (inputs, window resize, etc.)
 		// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
 		// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -716,17 +777,15 @@ int main() {
 			::DispatchMessage(&msg);
 			continue;
 		}
-
-		// Start the Dear ImGui frame
-		ImGui_ImplDX9_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
+		frameend = 0;
+		doStartFrame();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		//if (show_demo_window)
-		//    ImGui::ShowDemoWindow(&show_demo_window);
+		if (0&&show_demo_window)
+			ImGui::ShowDemoWindow(&show_demo_window);
+
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+		if(0)
 		{
 			static float f = 0.0f;
 			static int counter = 0;
@@ -736,7 +795,7 @@ int main() {
 			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
 			ImGui::Checkbox("Another Window", &show_another_window);
-			
+
 			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 			ImGui::ColorEdit3("clear color", (float*)& clear_color); // Edit 3 floats representing a color
 
@@ -749,33 +808,878 @@ int main() {
 			ImGui::End();
 		}
 		// 3. Show another simple window.
-		if (show_another_window) {
+		if (0&&show_another_window) {
 			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 			ImGui::Text("Hello from another window!");
 			if (ImGui::Button("Close Me"))
 				show_another_window = false;
 			ImGui::End();
 		}
-
 		// Rendering
-		ImGui::EndFrame();
-		g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, false);
-		g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
-		g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
-		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * 255.0f), (int)(clear_color.y * 255.0f), (int)(clear_color.z * 255.0f), (int)(clear_color.w * 255.0f));
-		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
-		if (g_pd3dDevice->BeginScene() >= 0) {
-			ImGui::Render();
-			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-			g_pd3dDevice->EndScene();
+
+
+	//return 0;
+remenu:
+		if (frameend) {
+			frameend = 0;
+			doStartFrame();
 		}
-		HRESULT result = g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
+		op = -1;
+		system("cls");
+		if (!usegui) {
+			fflush(stdin);
 
-		// Handle loss of D3D9 device
-		if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
-			ResetDevice();
+			printf("[Main Menu]\n");
+			printf("Welcome to Bill Statistics Software! Choose what you want: \n");
+			printf("* Tip: The IDs without [] should be done with the order they lists\n");
+			printf(" 1. Load Image\n");
+			printf(" 2. Binarize the Image\n");
+			printf(" 3. Confirm Binarize\n");
+			printf(" 4. Load Image Data\n");
+			printf("[5]. Manual Removal Tool\n");
+			printf(" 6. Scan Connective Area\n");
+			printf(" 7. Automatic Text Areas Detecting\n");
+			printf(" 8. Picking Samples\n");
+			printf(" 9. Do Recognize\n");
+			printf(" 99. Exit\n");
+			printf(" 999. About\n");
+			printf("Your Choice: ");
+			scanf("%d", &op);
+			system("cls");
+		}
+		else {
+			ImGui::Begin("Main Menu", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Text("Welcome to Bill Statistics Software! Choose what you want: ");
+			ImGui::Text("* Tip: The names without [] should be done with the order they lists");
+		}
+		if (op == 1 || (usegui && ImGui::Button("Load Image"))) {
+reloadimg:
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+			system("cls");
+			if (!usegui) {
+				printf("[Load Image]\n");
+				printf("Input exit to go back\n");
+				printf("After the input of file path, the preview will be shown, you need to close the window in order to continue the operation.");
+				printf("Input the RELATIVE path of the image: ");
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Load Image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Please input RELATIVE path of the image below:");
+					ImGui::InputText("", textbuffer, 255);
+					if (ImGui::Button("Confirm")) { doEndFrame();break; }
+					ImGui::SameLine();
+					if (ImGui::Button("Exit")) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+			if (!usegui) {
+				std::cin >> str;
+				if (str == "exit") goto remenu;
+			}
+			else str = (std::string)textbuffer;
+			org = cv::imread(str);
+			if (org.empty()) {
+				if (!usegui) {
+					printf("Failed to load the image!");
+					system("pause");
+					goto reloadimg;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Failed to load the image!");
+						if (ImGui::Button("Back")) { doEndFrame();goto reloadimg; }
+						doEndFrame();
+					}
+				}
+			}
+			long long p = (long long)(org.rows) * (long long)(org.cols);
+			if (org.rows < WinHeight) WinHeight = org.rows - 1;
+			if (org.cols < WinWidth) WinWidth = org.cols - 1;
+			if (p > 10000 * 10000) {
+				if (!usegui) {
+					printf("The image is too large!");
+					system("pause");
+					goto reloadimg;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("The image is too large!");
+						if (ImGui::Button("Back")) { doEndFrame();goto reloadimg; }
+						doEndFrame();
+					}
+				}
+			}
+			rect = cv::Rect(0, 0, WinWidth, WinHeight);
+			show = org(rect);
+			passby = org;
+			if (!usegui) {
+				printf("Press Enter to close the window.");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Load Image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Press Enter to close the window.");
+
+					doEndFrame();
+				}
+			}
+			WindowName = "Original Image";
+			cv::imshow("Original Image", show);
+			cv::setMouseCallback("Original Image", on_mouse);
+			cv::waitKey(0);
+			cv::destroyWindow("Original Image");
+			if (!usegui) {
+				printf("Image loaded.\n");
+				printf("Do you want to change a file? Y to confirm, others to not confirm.");
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+
+					doStartFrame();
+					ImGui::Begin("Question", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Image loaded.");
+					ImGui::Text("Would you like to change a file?");
+					if (ImGui::Button("Yes")) { str = "Y";doEndFrame();break; }
+					ImGui::SameLine();
+					if (ImGui::Button("No")) { str = "N";doEndFrame();break; }
+					doEndFrame();
+				}
+			}
+			if (!usegui) std::cin >> str;
+			if (str == "Y") goto reloadimg;
+		}
+		else if (op == 2 || (usegui && ImGui::Button("Binarize Image"))) {
+			system("cls");
+			printf("[Binarize Image]\n");
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+			if (!org.data) {
+
+				if (!usegui) {
+					printf("ERROR: ORIGINAL IMAGE NOT LOADED\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Original image not loaded.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			if (!usegui) {
+				printf("Scroll the bar to the position where best shows the information on your image and most of the other things were removed.\n");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Binarize Image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Scroll the bar to the position where best shows the information on your image and most of the other things were removed.");
+					ImGui::Text("Press Enter to confirm.");
+
+					doEndFrame();
+				}
+			}
+			WindowName = "Binarized Image";
+			cv::namedWindow("Binarized Image");
+			cv::cvtColor(org, bicolor, 7);
+			passby = bicolor;
+			rect = cv::Rect(0, 0, WinWidth, WinHeight);
+			show = bicolor(rect);
+			cv::imshow(WindowName, show);
+			cv::createTrackbar("threshold", "Binarized Image", 0, 255, onChangeTrackBar);
+			cv::setMouseCallback("Binarized Image", on_mouse);
+			cv::waitKey(0);
+			cv::destroyWindow("Binarized Image");
+			confirmed = 0;
+			goto remenu;
+		}
+		else if (op == 3 || (usegui && ImGui::Button("Confirm Binarize"))) {
+			printf("[Confirm Binarize]\n");
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+			if (!bicolor.data) {
+				if (!usegui) {
+					printf("ERROR: IMAGE NOT BINARIZED!\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Image not binarized.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			if (confirmed) {
+				if (!usegui) {
+					printf("ERROR: THIS BINARIZE HAS BEEN CONFIRMED!\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("This binarize has been confirmed.");
+						if (ImGui::Button("Confirm")) { doEndFrame(); goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			passby.copyTo(bicolor);
+			confirmed = 1;
+			if (!usegui) {
+				printf("Confirmed.\n");
+				system("pause");
+				goto remenu;
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+
+					doStartFrame();
+					ImGui::Begin("Info", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Confirmed.");
+					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+		}
+		else if (op == 4 || (usegui && ImGui::Button("Load Image Data"))) {
+reloadimg_:
+			printf("[Load Image Data]\n");
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+			if (!confirmed) {
+				if (!usegui) {
+					printf("ERROR: BINARIZE NOT CONFIRMED\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Binarize not confirmed.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			if (!usegui) {
+				printf("Loading, please wait.\n");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Work in progress", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Loading, please wait.");
+
+					doEndFrame();
+				}
+			}
+			imgdata.clear();
+			emp.clear();
+			for (int i = 0;i < bicolor.rows;i++) {
+				imgdata.push_back(emp);
+				for (int j = 0;j < bicolor.cols;j++) {
+					imgdata[i].push_back((bool)(bicolor.at<uchar>(i, j) == 0));
+				}
+			}
+			if (!usegui) {
+				printf("Done.\n");
+				system("pause");
+				goto remenu;
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+
+					doStartFrame();
+					ImGui::Begin("Info", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Done.");
+					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+		}
+		else if (op == 5 || (usegui && ImGui::Button("Manaul Removal Tool"))) {
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+			printf("[Manual Removal Tool]\n");
+			if (!imgdata.size()) {
+				if (!usegui) {
+					printf("ERROR: IMAGE DATA NOT LOADED\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Image data not loaded.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			if (!usegui) {
+				printf("Use this tool to remove the unimportant details from the image, once you dobule right-clicked a point, all of the points that have a fully-black path to it will be removed.\nNOTE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.\n");
+
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Manual Removal Tool", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Use this tool to remove the unimportant details from the image, once you dobule right-clicked a point, ");
+					ImGui::Text("all of the points that have a fully-black path to it will be removed.");
+					ImGui::Text("NOTICE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.");
+					ImGui::Text("Press Enter to close the window and complete the operation.");
+					//\nNOTICE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.
+					doEndFrame();
+				}
+			}
+			rect = cv::Rect(0, 0, WinWidth, WinHeight);
+			show = bicolor(rect);
+			cv::imshow("Removal Tool", show);
+			WindowName = "Removal Tool";
+			cv::setMouseCallback("Removal Tool", on_remove_mouse);
+			cv::waitKey(0);
+			cv::destroyWindow("Removal Tool");
+			goto reloadimg_;
+		}
+		else if (op == 6 || (usegui && ImGui::Button("Scan Connective Area"))) {
+
+			printf("[Scan Connective Area]\n");
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+recalc:
+			if (!imgdata.size()) {
+				if (!usegui) {
+					printf("ERROR: IMAGE DATA NOT LOADED\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Image data not loaded.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			if (cainfo[0].size()) {
+				if (!usegui) {
+					printf("Are you sure to calcuate the connective area AGAIN? Y to confirm, the others to not confirm.\n");
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Question", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Are you sure to calcuate the connective area AGAIN?");
+						if (ImGui::Button("Yes")) { doEndFrame();str = "Y";break; }
+						ImGui::SameLine();
+						if (ImGui::Button("No")) { doEndFrame();str = "N";break; }
+						doEndFrame();
+					}
+				}
+				if (!usegui) std::cin >> str;
+				if (str == "Y") { cainfo[0].clear();cainfo[1].clear();cntsa = 0;goto recalc; }
+				else goto remenu;
+			}
+			emp.clear();vis.clear();
+			for (int j = 0;j < bicolor.cols;j++)
+				emp.push_back(0);
+			for (int i = 0;i < bicolor.rows;i++)
+				vis.push_back(emp);
+			cvtColor(bicolor, canv, 8);
+			rect = cv::Rect(0, 0, WinWidth, WinHeight);
+			show = bicolor(rect);
+			cv::imshow("Connective Area Scanning", show);
+			WindowName = "Connective Area Scanning";
+			passby = bicolor;
+			cv::setMouseCallback("Connective Area Scanning", on_mouse);
+			ScanCA();
+			cv::waitKey(0);
+			cv::destroyWindow("Connective Area Scanning");
+			if (!usegui) {
+				system("cls");
+				printf("Completed.\n");
+				system("pause");
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Info", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Completed.");
+					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+			goto remenu;
+		}
+		else if (op == 7 || (usegui && ImGui::Button("Automatic Text Area Dectings"))) {
+			printf("[Automatic Text Areas Detecting]\n");
+			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
+redetect:
+			if (!cainfo[0].size()) {
+				if (!usegui) {
+					printf("ERROR: CONNECTIVE AREA NOT DETECTED\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Connective area not detected.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			if (areainfo[0].size()) {
+				if (!usegui) {
+					printf("Are you sure to detect text areas AGAIN? Y to confirm, the others to not confirm.\n");
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Question", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Are you sure to detect text area AGAIN?");
+						if (ImGui::Button("Yes")) { doEndFrame();str = "Y";break; }
+						ImGui::SameLine();
+						if (ImGui::Button("No")) { doEndFrame();str = "N";break; }
+						doEndFrame();
+					}
+				}
+				if (!usegui) std::cin >> str;
+				if (str == "Y") { areainfo[0].clear();areainfo[1].clear();cntsa_ = 0;goto redetect; }
+				else goto remenu;
+			}
+			cv::morphologyEx(bicolor, textarea, 2, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(30, 1)));
+			rect = cv::Rect(0, 0, WinWidth, WinHeight);
+			cv::cvtColor(bicolor, canv, 8);
+			show = canv(rect);
+			cv::imshow("Automatic Text Areas Detecting", bicolor);
+			passby = canv;
+			WindowName = "Automatic Text Areas Detecting";
+			cv::setMouseCallback(WindowName, on_mouse);
+			if (!usegui) {
+				printf("Preparing...\n");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Work in progress", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Preparing for the detection...");
+					doEndFrame();
+				}
+			}
+			imgdata_.clear();
+			emp.clear();
+			for (int i = 0;i < bicolor.rows;i++) {
+				imgdata_.push_back(emp);
+				for (int j = 0;j < bicolor.cols;j++) {
+					imgdata_[i].push_back((bool)(textarea.at<uchar>(i, j) == 0));
+				}
+			}
+
+			if (!usegui) {
+				printf("Calculating Text Areas...\n");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Work in progress", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Calculating Text Areas...");
+					doEndFrame();
+				}
+			}
+			emp.clear();vis_.clear();
+			for (int j = 0;j < bicolor.cols;j++)
+				emp.push_back(0);
+			for (int i = 0;i < bicolor.rows;i++)
+				vis_.push_back(emp);
+			ScanCA_();
+			emp.clear();imgdata_.clear();
+			if (!usegui) {
+				printf("Completed, please press Enter.\n");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Automatic Text Area Detect", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Completed, please press Enter.");
+					doEndFrame();
+				}
+			}
+			cv::waitKey(0);
+			cv::destroyWindow("Automatic Text Areas Detecting");
+		}
+		else if (op == 8 || (usegui && ImGui::Button("Picking Samples"))) {
+			printf("[Picking Samples]\n");
+			if (!areainfo[0].size()) {
+				if (!usegui) {
+					printf("ERROR: TEXT AREA NOT DETECTED\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Text area not detected.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			for (int i = 0;i <= 12;i++)
+				DoFetchSample(i);
+			fetched = 1;
+			cv::destroyWindow("Point Picking");
+			cv::destroyWindow("Current Choice");
+			goto remenu;
+		}
+		else if (op == 9 || (usegui && ImGui::Button("Do Recognize"))) {
+			printf("[Do Recognize]\n");
+			positive = negative = 0;
+			if (!fetched) {
+				if (!usegui) {
+					printf("ERROR: SAMPLE NOT FETCHED!\n");
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Sample not fetched.");
+						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			visca.clear();visarea.clear();textinfo.clear();
+rechoose:
+			for (int i = 0;i < 2;i++) {
+				if (!usegui) {
+					system("cls");
+					printf("[Do Recognize]\n");
+					printf("Double left-click to choose point, now choose %s point. Double right-click to confirm.\n", i ? "RIGHT-DOWN" : "LEFT-UP");
+				}
+				else {
+					for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+						doStartFrame();
+						ImGui::Begin("Do Recognize", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text("Double left-click to choose point, now choose %s point. Double right-click to confirm.\n", i ? "RIGHT-DOWN" : "LEFT-UP");
+						doEndFrame();
+					}
+				}
+				passby = bicolor;
+				trans = i;
+				WindowName = "Select Point";
+				rect = cv::Rect(0, 0, WinWidth, WinHeight);
+				show = bicolor(rect);
+				cv::imshow("Select Point", show);
+				cv::setMouseCallback(WindowName, on_recognize_mouse);
+				cv::waitKey(0);
+				cv::destroyWindow("Select Point");
+				if (i) {
+					if (range[0][0] > range[1][0] || range[0][1] > range[1][1]) {
+						if (!usegui) {
+							printf("ERROR: INVAILD RANGE\n");
+							system("pause");
+							goto rechoose;
+						}
+						else {
+							while (msg.message != WM_QUIT) {
+								if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+									::TranslateMessage(&msg);
+									::DispatchMessage(&msg);
+									continue;
+								}
+
+								doStartFrame();
+								ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+								ImGui::Text("Invaild Range.");
+								if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+								doEndFrame();
+							}
+						}
+					}
+				}
+			}
+			for (int i = 0;i <= cntsa;i++)
+				visca.push_back(0);
+			for (int i = 0;i <= cntsa_;i++) {
+				visarea.push_back(0);
+				textinfo.push_back(pq_emp);
+			}
+			//printf("%d %d %d %d\n",range[0][0],range[0][1],range[1][0],range[1][1]);
+			for (int i = range[0][0];i <= range[1][0];i++)
+				for (int j = range[0][1];j <= range[1][1];j++) {
+					//printf("%d %d %d %d %d | %d %d\n",i,j,imgdata[i][j],visarea[vis_[i][j]],visca[vis[i][j]], vis_[i][j],vis[i][j]);
+					if (imgdata[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
+						int pp = i, qq = j;
+						int v = GetResponse(cainfo[0][vis[i][j] - 1].x, cainfo[0][vis[i][j] - 1].y, cainfo[1][vis[i][j] - 1].x, cainfo[1][vis[i][j] - 1].y);
+						i = (cainfo[0][vis[i][j] - 1].x + cainfo[1][vis[i][j] - 1].x) / 2;j = (cainfo[0][vis[i][j] - 1].y + cainfo[1][vis[i][j] - 1].y) / 2;
+						visca[vis[i][j]] = 1;
+						if (v == -1) {
+							visarea[vis_[i][j]] = 1;
+							continue;
+						}
+						data tmp;
+						tmp.x = v;tmp.y = cainfo[0][vis[i][j] - 1].y;
+						textinfo[vis_[i][j]].push(tmp);
+						//printf("%d %d At area %d, Add %d with Y=%d\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y);
+						i = pp;j = qq;
+					}
+				}
+			std::string tmp;
+			if (!usegui)printf("Original Entries:\n");
+			for (int i = 1;i <= cntsa_;i++) {
+				if (textinfo[i].size()) {
+					tmp = "";
+					while (!textinfo[i].empty()) {
+						tmp += GetChar(textinfo[i].top().x);
+						if (!usegui)printf("%c", GetChar(textinfo[i].top().x));
+						textinfo[i].pop();
+					}
+					if (!usegui)printf("\n");
+					Accumulate(tmp);
+					if (usegui) resultvec.push_back(tmp);
+				}
+			}
+			if (!usegui) {
+				printf("result: income %.2lf | outgoing %.2lf\n", positive, negative);
+				system("pause");
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+
+					doStartFrame();
+					ImGui::Begin("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Original Entries:");
+					for (int resid = 0;resid < resultvec.size();resid++) {
+						int l = resultvec[resid].length();
+						for (int resj = 0;resj < l;resj++)
+							textbuffer[resj] = resultvec[resid][resj];
+						textbuffer[l] = '\0';
+						ImGui::Text("%s", textbuffer);
+					}
+					ImGui::Text("result: income %.2lf | outgoing %.2lf\n", positive, negative);
+					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+		}
+		else if (op == 99 || (usegui && ImGui::Button("Exit"))) {
+			return 0;
+		}
+		else if (op == 999 || (usegui && ImGui::Button("About"))) {
+			if (!usegui) {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
+				printf("Version: 2.0.1 Beta\n");
+				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
+				printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
+				printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
+				printf("Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.\n");
+				printf("Copyright (C) 2009-2016, NVIDIA Corporation, all rights reserved.\n");
+				printf("Copyright (C) 2010-2013, Advanced Micro Devices, Inc., all rights reserved.\n");
+				printf("Copyright (C) 2015-2016, OpenCV Foundation, all rights reserved.\n");
+				printf("Copyright (C) 2015-2016, Itseez Inc., all rights reserved.\n");
+				printf("Third party copyrights are property of their respective owners.\n");
+				printf("This product used ocornut/imgui, which licensed under MIT License.");
+				system("pause");
+				goto remenu;
+			}
+			else {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE ABOVE AS WELL
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+
+					doStartFrame();
+					ImGui::Begin("About", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Version: 2.0.1 Beta\n");
+					ImGui::Text("Copyright (C) ksyx 2019, licensed under MIT license.\n");
+					ImGui::Text("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
+					ImGui::Text("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
+					ImGui::Text("Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.\n");
+					ImGui::Text("Copyright (C) 2009-2016, NVIDIA Corporation, all rights reserved.\n");
+					ImGui::Text("Copyright (C) 2010-2013, Advanced Micro Devices, Inc., all rights reserved.\n");
+					ImGui::Text("Copyright (C) 2015-2016, OpenCV Foundation, all rights reserved.\n");
+					ImGui::Text("Copyright (C) 2015-2016, Itseez Inc., all rights reserved.\n");
+					ImGui::Text("Third party copyrights are property of their respective owners.\n");
+					ImGui::Text("This product used ocornut/imgui, which licensed under MIT License.");
+					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+		}
+		if (usegui && !frameend) doEndFrame();
+		if (!usegui)goto remenu;
 	}
-
 	ImGui_ImplDX9_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
@@ -783,292 +1687,5 @@ int main() {
 	CleanupDeviceD3D();
 	::DestroyWindow(hwnd);
 	::UnregisterClass(wc.lpszClassName, wc.hInstance);
-
-	return 0;
-remenu:
-	fflush(stdin);
-	system("cls");
-	printf("[Main Menu]\n");
-	printf("Welcome to Bill Statistics Software! Choose what you want: \n");
-	printf("* Tip: The IDs without [] should be done with the order they lists\n");
-	printf(" 1. Load Image\n");
-	printf(" 2. Binarize the Image\n");
-	printf(" 3. Confirm Binarize\n");
-	printf(" 4. Load Image Data\n");
-	printf("[5]. Manual Removal Tool\n");
-	printf(" 6. Scan Connective Area\n");
-	printf(" 7. Automatic Text Areas Detecting\n");
-	printf(" 8. Picking Samples\n");
-	printf(" 9. Do Recognize\n");
-	printf(" 99. Exit\n");
-	printf(" 999. About\n");
-	printf("Your Choice: ");
-	scanf("%d", &op);
-	system("cls");
-	if (op == 1) {
-reloadimg:
-		system("cls");
-		printf("[Load Image]\n");
-		printf("Input exit to go back\n");
-		printf("After the input of file path, the preview will be shown, you need to close the window in order to continue the operation.");
-		printf("Input the RELATIVE path of the image: ");
-		std::cin >> str;
-		if (str == "exit") goto remenu;
-		org = cv::imread(str);
-		if (org.empty()) {
-			printf("Failed to load the image!");
-			system("pause");
-			goto reloadimg;
-		}
-		long long p = (long long)(org.rows) * (long long)(org.cols);
-		if (org.rows < WinHeight) WinHeight = org.rows - 1;
-		if (org.cols < WinWidth) WinWidth = org.cols - 1;
-		if (p > 10000 * 10000) {
-			printf("The size of the image is too big!");
-			system("pause");
-			goto reloadimg;
-		}
-		rect = cv::Rect(0, 0, WinWidth, WinHeight);
-		show = org(rect);
-		passby = org;
-		WindowName = "Original Image";
-		cv::imshow("Original Image", show);
-		cv::setMouseCallback("Original Image", on_mouse);
-		cv::waitKey(0);
-		cv::destroyWindow("Original Image");
-		system("cls");
-		printf("Image loaded, check it in the new window.\n");
-		printf("Do you want to change a file? Y to confirm, others to not confirm.");
-		std::cin >> str;
-		if (str == "Y") goto reloadimg;
-	}
-	else if (op == 2) {
-		system("cls");
-		printf("[Binarize Image]\n");
-		if (!org.data) { printf("ERROR: ORIGINAL IMAGE NOT LOADED\n");system("pause");goto remenu; }
-		printf("Scroll the bar to the position where best shows the information on your image and most of the other things were removed\n");
-		WindowName = "Binarized Image";
-		cv::namedWindow("Binarized Image");
-		cv::cvtColor(org, bicolor, 7);
-		passby = bicolor;
-		rect = cv::Rect(0, 0, WinWidth, WinHeight);
-		show = bicolor(rect);
-		cv::imshow(WindowName, show);
-		cv::createTrackbar("threshold", "Binarized Image", 0, 255, onChangeTrackBar);
-		cv::setMouseCallback("Binarized Image", on_mouse);
-		cv::waitKey(0);
-		cv::destroyWindow("Binarized Image");
-		confirmed = 0;
-		goto remenu;
-	}
-	else if (op == 3) {
-		printf("[Confirm Binarize]\n");
-		if (!bicolor.data) { printf("ERROR: IMAGE NOT BINARIZED!\n");system("pause");goto remenu; }
-		if (confirmed) { printf("ERROR: THIS BINARIZE HAS BEEN CONFIRMED!\n");system("pause");goto remenu; }
-		passby.copyTo(bicolor);
-		printf("Confirmed.\n");
-		system("pause");
-		confirmed = 1;
-		goto remenu;
-	}
-	else if (op == 4) {
-reloadimg_:
-		printf("[Load Image Data]\n");
-		if (!confirmed) { printf("ERROR: BINARIZE NOT CONFIRMED\n");system("pause");goto remenu; }
-		printf("Loading...\n");
-		imgdata.clear();
-		emp.clear();
-		for (int i = 0;i < bicolor.rows;i++) {
-			imgdata.push_back(emp);
-			for (int j = 0;j < bicolor.cols;j++) {
-				imgdata[i].push_back((bool)(bicolor.at<uchar>(i, j) == 0));
-			}
-		}
-		printf("Done.\n");
-		system("pause");
-	}
-	else if (op == 5) {
-		printf("[Manual Removal Tool]\n");
-		if (!imgdata.size()) { printf("ERROR: IMAGE DATA NOT LOADED!\n");system("pause");goto remenu; }
-		printf("Use this tool to remove the unimportant details from the image, once you dobule right-clicked a point, all of the points that have a fully-black path to it will be removed, NOTICE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.\n");
-		rect = cv::Rect(0, 0, WinWidth, WinHeight);
-		show = bicolor(rect);
-		cv::imshow("Removal Tool", show);
-		WindowName = "Removal Tool";
-		cv::setMouseCallback("Removal Tool", on_remove_mouse);
-		cv::waitKey(0);
-		cv::destroyWindow("Removal Tool");
-		goto reloadimg_;
-	}
-	else if (op == 6) {
-		printf("[Scan Connective Area]\n");
-recalc:
-		if (!imgdata.size()) { printf("ERROR: IMAGE DATA NOT LOADED!\n");system("pause");goto remenu; }
-		if (cainfo[0].size()) {
-			printf("Are you sure to calcuate the connective area AGAIN? Y to confirm, the others to not confirm.\n");
-			std::cin >> str;
-			if (str == "Y") { cainfo[0].clear();cainfo[1].clear();cntsa = 0;goto recalc; }
-			else goto remenu;
-		}
-		emp.clear();vis.clear();
-		for (int j = 0;j < bicolor.cols;j++)
-			emp.push_back(0);
-		for (int i = 0;i < bicolor.rows;i++)
-			vis.push_back(emp);
-		cvtColor(bicolor, canv, 8);
-		rect = cv::Rect(0, 0, WinWidth, WinHeight);
-		show = bicolor(rect);
-		cv::imshow("Connective Area Scanning", show);
-		WindowName = "Connective Area Scanning";
-		passby = bicolor;
-		cv::setMouseCallback("Connective Area Scanning", on_mouse);
-		ScanCA();
-		cv::waitKey(0);
-		cv::destroyWindow("Connective Area Scanning");
-		system("cls");
-		printf("Completed.\n");
-		system("pause");
-		goto remenu;
-	}
-	else if (op == 7) {
-		printf("[Automatic Text Areas Detecting]\n");
-redetect:
-		if (!cainfo[0].size()) { printf("ERROR: CONNECTIVE AREA NOT DETECTED\n");system("pause");goto remenu; }
-		if (areainfo[0].size()) {
-			printf("Are you sure to detect text areas AGAIN? Y to confirm, the others to not confirm.\n");
-			std::cin >> str;
-			if (str == "Y") { areainfo[0].clear();areainfo[1].clear();cntsa_ = 0;goto redetect; }
-			else goto remenu;
-		}
-		cv::morphologyEx(bicolor, textarea, 2, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(30, 1)));
-		rect = cv::Rect(0, 0, WinWidth, WinHeight);
-		cv::cvtColor(bicolor, canv, 8);
-		show = canv(rect);
-		cv::imshow("Automatic Text Areas Detecting", bicolor);
-		passby = canv;
-		WindowName = "Automatic Text Areas Detecting";
-		cv::setMouseCallback(WindowName, on_mouse);
-		printf("Loading data...\n");
-		imgdata_.clear();
-		emp.clear();
-		for (int i = 0;i < bicolor.rows;i++) {
-			imgdata_.push_back(emp);
-			for (int j = 0;j < bicolor.cols;j++) {
-				imgdata_[i].push_back((bool)(textarea.at<uchar>(i, j) == 0));
-			}
-		}
-		printf("Calcuating Text Areas...\n");
-		emp.clear();vis_.clear();
-		for (int j = 0;j < bicolor.cols;j++)
-			emp.push_back(0);
-		for (int i = 0;i < bicolor.rows;i++)
-			vis_.push_back(emp);
-		ScanCA_();
-		emp.clear();imgdata_.clear();
-		cv::waitKey(0);
-		cv::destroyWindow("Automatic Text Areas Detecting");
-	}
-	else if (op == 8) {
-		printf("[Picking Samples]\n");
-		if (!areainfo[0].size()) {
-			printf("ERROR: AREA INFO NOT DETECTED!\n");
-			system("pause");
-			goto remenu;
-		}
-		for (int i = 0;i <= 12;i++)
-			DoFetchSample(i);
-		fetched = 1;
-		cv::destroyWindow("Point Picking");
-		cv::destroyWindow("Current Choice");
-		goto remenu;
-	}
-	else if (op == 9) {
-		printf("[Do Recognize]\n");
-		positive = negative = 0;
-		if (!fetched) {
-			printf("ERROR: SAMPLE NOT FETCHED!\n");
-			system("pause");
-			goto remenu;
-		}
-		visca.clear();visarea.clear();textinfo.clear();
-rechoose:
-		for (int i = 0;i < 2;i++) {
-			system("cls");
-			printf("[Do Recognize]\n");
-			printf("Double left-click to choose point, now choose %s point. Double right-click to confirm.\n", i ? "RIGHT-DOWN" : "LEFT-UP");
-			passby = bicolor;
-			trans = i;
-			WindowName = "Select Point";
-			rect = cv::Rect(0, 0, WinWidth, WinHeight);
-			show = bicolor(rect);
-			cv::imshow("Select Point", show);
-			cv::setMouseCallback(WindowName, on_recognize_mouse);
-			cv::waitKey(0);
-			cv::destroyWindow("Select Point");
-			if (i) {
-				if (range[0][0] > range[1][0] || range[0][1] > range[1][1]) {
-					printf("ERROR: INVAILD RANGE\n");
-					system("pause");
-					goto rechoose;
-				}
-			}
-		}
-		for (int i = 0;i <= cntsa;i++)
-			visca.push_back(0);
-		for (int i = 0;i <= cntsa_;i++) {
-			visarea.push_back(0);
-			textinfo.push_back(pq_emp);
-		}
-		//printf("%d %d %d %d\n",range[0][0],range[0][1],range[1][0],range[1][1]);
-		for (int i = range[0][0];i <= range[1][0];i++)
-			for (int j = range[0][1];j <= range[1][1];j++) {
-				//printf("%d %d %d %d %d | %d %d\n",i,j,imgdata[i][j],visarea[vis_[i][j]],visca[vis[i][j]], vis_[i][j],vis[i][j]);
-				if (imgdata[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
-					int pp = i, qq = j;
-					int v = GetResponse(cainfo[0][vis[i][j] - 1].x, cainfo[0][vis[i][j] - 1].y, cainfo[1][vis[i][j] - 1].x, cainfo[1][vis[i][j] - 1].y);
-					i = (cainfo[0][vis[i][j] - 1].x + cainfo[1][vis[i][j] - 1].x) / 2;j = (cainfo[0][vis[i][j] - 1].y + cainfo[1][vis[i][j] - 1].y) / 2;
-					visca[vis[i][j]] = 1;
-					if (v == -1) {
-						visarea[vis_[i][j]] = 1;
-						continue;
-					}
-					data tmp;
-					tmp.x = v;tmp.y = cainfo[0][vis[i][j] - 1].y;
-					textinfo[vis_[i][j]].push(tmp);
-					//printf("%d %d At area %d, Add %d with Y=%d\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y);
-					i = pp;j = qq;
-				}
-			}
-		std::string tmp;
-		printf("Original Entries:\n");
-		for (int i = 1;i <= cntsa_;i++) {
-			if (textinfo[i].size()) {
-				tmp = "";
-				while (!textinfo[i].empty()) { tmp += GetChar(textinfo[i].top().x);printf("%c", GetChar(textinfo[i].top().x));textinfo[i].pop(); }
-				printf("\n");
-				Accumulate(tmp);
-			}
-		}
-		printf("result: income %.2lf | outgoing %.2lf\n", positive, negative);
-		system("pause");
-	}
-	else if (op == 99) {
-		return 0;
-	}
-	else if (op == 999) {
-		printf("Version: 1.0.1 Beta\n");
-		printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
-		printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
-		printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
-		printf("Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.\n");
-		printf("Copyright (C) 2009-2016, NVIDIA Corporation, all rights reserved.\n");
-		printf("Copyright (C) 2010-2013, Advanced Micro Devices, Inc., all rights reserved.\n");
-		printf("Copyright (C) 2015-2016, OpenCV Foundation, all rights reserved.\n");
-		printf("Copyright (C) 2015-2016, Itseez Inc., all rights reserved.\n");
-		printf("Third party copyrights are property of their respective owners.\n");
-		system("pause");
-		goto remenu;
-	}
-	goto remenu;
 	return 0;
 }
