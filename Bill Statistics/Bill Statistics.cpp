@@ -344,7 +344,6 @@ void onChangeTrackBar(int pos, void* data) {
 	show = dst(rect);
 	cv::imshow(WindowName, show);
 }
-//TODO: 将所有连通块求出，将距离小于某个值的记做一个区域，将所有纯数字区域进行求和（最简单版本） 
 void BFS_CA(int sx, int sy, int id) {
 	data tmp, temp;
 	tmp.x = sx;tmp.y = sy;
@@ -780,13 +779,12 @@ int main() {
 		frameend = 0;
 		doStartFrame();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (0&&show_demo_window)
+		if (0 && show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
 
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-		if(0)
-		{
+		if (0) {
 			static float f = 0.0f;
 			static int counter = 0;
 
@@ -808,7 +806,7 @@ int main() {
 			ImGui::End();
 		}
 		// 3. Show another simple window.
-		if (0&&show_another_window) {
+		if (0 && show_another_window) {
 			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 			ImGui::Text("Hello from another window!");
 			if (ImGui::Button("Close Me"))
@@ -1183,7 +1181,7 @@ reloadimg_:
 				}
 			}
 		}
-		else if (op == 5 || (usegui && ImGui::Button("Manaul Removal Tool"))) {
+		else if (op == 5 || (usegui && ImGui::Button("Manual Removal Tool"))) {
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			printf("[Manual Removal Tool]\n");
 			if (!imgdata.size()) {
@@ -1303,6 +1301,22 @@ recalc:
 			passby = bicolor;
 			cv::setMouseCallback("Connective Area Scanning", on_mouse);
 			ScanCA();
+			if (!usegui) {
+				printf("Completed, please press Enter.\n");
+			}
+			else {
+				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin("Automatic Text Area Detect", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text("Completed, please press Enter.");
+					doEndFrame();
+				}
+			}
 			cv::waitKey(0);
 			cv::destroyWindow("Connective Area Scanning");
 			if (!usegui) {
@@ -1591,6 +1605,7 @@ rechoose:
 				}
 			std::string tmp;
 			if (!usegui)printf("Original Entries:\n");
+			if (usegui) resultvec.clear();
 			for (int i = 1;i <= cntsa_;i++) {
 				if (textinfo[i].size()) {
 					tmp = "";
@@ -1605,7 +1620,7 @@ rechoose:
 				}
 			}
 			if (!usegui) {
-				printf("result: income %.2lf | outgoing %.2lf\n", positive, negative);
+				printf("Result: income %.2lf | outgoing %.2lf\n", positive, negative);
 				system("pause");
 			}
 			else {
@@ -1626,7 +1641,9 @@ rechoose:
 						textbuffer[l] = '\0';
 						ImGui::Text("%s", textbuffer);
 					}
-					ImGui::Text("result: income %.2lf | outgoing %.2lf\n", positive, negative);
+					ImGui::Text("Original Entries:");
+					ImGui::Text("Income %.2lf", positive);
+					ImGui::Text("Outgoing %.2lf", negative);
 					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
@@ -1637,7 +1654,7 @@ rechoose:
 		}
 		else if (op == 999 || (usegui && ImGui::Button("About"))) {
 			if (!usegui) {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
-				printf("Version: 2.0.1 Beta\n");
+				printf("Version: 2.0.2 Beta\n");
 				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
 				printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 				printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
@@ -1661,7 +1678,7 @@ rechoose:
 
 					doStartFrame();
 					ImGui::Begin("About", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Version: 2.0.1 Beta\n");
+					ImGui::Text("Version: 2.0.2 Beta\n");
 					ImGui::Text("Copyright (C) ksyx 2019, licensed under MIT license.\n");
 					ImGui::Text("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 					ImGui::Text("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
