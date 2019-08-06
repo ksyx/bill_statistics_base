@@ -707,6 +707,7 @@ accu:
 int main() {
 	// Create application window
 	int guiWidth = 1280, guiHeight = 720;
+	printf("[System Configuration]\n");
 	printf("Would you like to use GUI? 0 for no, others for yes.");
 	scanf("%d", &usegui);
 	if (!usegui) {
@@ -721,7 +722,10 @@ int main() {
 		::UnregisterClass(wc.lpszClassName, wc.hInstance);
 		return 1;
 	}
-
+	double zoomratio = 1.0;
+	printf("Input zoom ratio, 1 for 100%: ");
+	scanf("%lf", &zoomratio);
+	zoomratio *= 18;
 	// Show the window
 	::ShowWindow(hwnd, SW_SHOWDEFAULT);
 	::UpdateWindow(hwnd);
@@ -756,7 +760,7 @@ int main() {
 	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 	//IM_ASSERT(font != NULL);
 	lang = 0;
-	if (lang == 1) io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/SimHei.ttf", 16.0f);
+	if (lang == 1) io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/SimHei.ttf", zoomratio);
 	// Our state
 	bool show_demo_window = true;
 	bool show_another_window = false;
@@ -1675,7 +1679,7 @@ rechoose:
 						::DispatchMessage(&msg);
 						continue;
 					}
-
+						
 					doStartFrame();
 					ImGui::Begin("About", NULL, ImGuiWindowFlags_AlwaysAutoResize);
 					ImGui::Text("Version: 2.0.2 Beta\n");

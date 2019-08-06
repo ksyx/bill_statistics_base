@@ -1,0 +1,7 @@
+In high DPI, the scaling performed by system on some fonts like SimHei does not have good effect, in that case, please change the compatibility settings of the executable file with the following steps:
+Properties -> Compatibility -> Change high DPI settings -> Override high DPI behavior, scaling performed by Application.
+After starting the program, use some scaling ratio like 2 when asked.
+
+===
+
+Uncheck the override settings when the scaling of the program have no effect, e.g. the output is the same in different ratio like 1 and 2.
