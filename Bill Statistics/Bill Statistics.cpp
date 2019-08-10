@@ -22,7 +22,7 @@
 #include <tchar.h>
 #undef min
 #undef max
-
+#include "lang.h"
 // Data
 static LPDIRECT3D9              g_pD3D = NULL;
 static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
@@ -35,146 +35,6 @@ void ResetDevice();
 void doStartFrame();
 void doEndFrame();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-/*
-// Main code
-int main(int, char**) {
-	// Create application window
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
-	::RegisterClassEx(&wc);
-	HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX9 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
-
-	// Initialize Direct3D
-	if (!CreateDeviceD3D(hwnd)) {
-		CleanupDeviceD3D();
-		::UnregisterClass(wc.lpszClassName, wc.hInstance);
-		return 1;
-	}
-
-	// Show the window
-	::ShowWindow(hwnd, SW_SHOWDEFAULT);
-	::UpdateWindow(hwnd);
-
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
-
-	// Setup Platform/Renderer bindings
-	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX9_Init(g_pd3dDevice);
-
-	// Load Fonts
-	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-	// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-	// - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-	// - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-	// - Read 'misc/fonts/README.txt' for more instructions and details.
-	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-	//io.Fonts->AddFontDefault();
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-	//IM_ASSERT(font != NULL);
-
-	// Our state
-	bool show_demo_window = true;
-	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-	// Main loop
-	MSG msg;
-	ZeroMemory(&msg, sizeof(msg));
-	while (msg.message != WM_QUIT) {
-		// Poll and handle messages (inputs, window resize, etc.)
-		// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-		// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-		// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
-		// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-		if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
-			continue;
-		}
-
-		// Start the Dear ImGui frame
-		ImGui_ImplDX9_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		//if (show_demo_window)
-		//    ImGui::ShowDemoWindow(&show_demo_window);
-
-		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-		{
-			static float f = 0.0f;
-			static int counter = 0;
-
-			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-			ImGui::Checkbox("Another Window", &show_another_window);
-
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-			ImGui::ColorEdit3("clear color", (float*)& clear_color); // Edit 3 floats representing a color
-
-			if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-				counter++;
-			ImGui::SameLine();
-			ImGui::Text("counter = %d", counter);
-
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
-		}
-		// 3. Show another simple window.
-		if (show_another_window) {
-			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-			ImGui::Text("Hello from another window!");
-			if (ImGui::Button("Close Me"))
-				show_another_window = false;
-			ImGui::End();
-		}
-
-		// Rendering
-		ImGui::EndFrame();
-		g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, false);
-		g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
-		g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
-		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * 255.0f), (int)(clear_color.y * 255.0f), (int)(clear_color.z * 255.0f), (int)(clear_color.w * 255.0f));
-		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
-		if (g_pd3dDevice->BeginScene() >= 0) {
-			ImGui::Render();
-			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-			g_pd3dDevice->EndScene();
-		}
-		HRESULT result = g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
-
-		// Handle loss of D3D9 device
-		if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
-			ResetDevice();
-	}
-
-	ImGui_ImplDX9_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-
-	CleanupDeviceD3D();
-	::DestroyWindow(hwnd);
-	::UnregisterClass(wc.lpszClassName, wc.hInstance);
-
-	return 0;
-}
-*/
-
 struct data {
 	int x, y;
 	bool operator < (const data& b) const {
@@ -198,7 +58,6 @@ std::vector<std::string>resultvec;
 std::priority_queue<data>pq_emp;
 int xd[4] = { -1,1,0,0 }, yd[4] = { 0,0,-1,1 }, id[20];char textbuffer[512];
 bool usegui;bool frameend;
-int lang;
 ImGuiIO tmpio;
 WNDCLASSEX wc;HWND hwnd;ImGuiIO& io = tmpio;ImVec4 clear_color;MSG msg;
 // Helper functions
@@ -707,25 +566,43 @@ accu:
 int main() {
 	// Create application window
 	int guiWidth = 1280, guiHeight = 720;
-	printf("[System Configuration]\n");
-	printf("Would you like to use GUI? 0 for no, others for yes.");
+	printf("[System Configuration]\n[系统配置]\n");
+	printf("What's your language?\n您要使用哪种语言？\n");
+	printf("0. English\n");
+	printf("1. 简体中文\n");
+	printf("Notice: English would be used if input matches nothing.\n注意：如果未找到匹配项，将使用英文。\n");
+	scanf("%d", &lang);
+	printf(getPromptText(USE_GUI_QUERY));
 	scanf("%d", &usegui);
 	if (!usegui) {
 		guiWidth = 100;guiHeight = 100;
 	}
+	double zoomratio = 1.0;
+	if (usegui) {
+		printf(getPromptText(SET_ZOOM_RATIO));
+		scanf("%lf", &zoomratio);
+		if (zoomratio < 0) {
+			printf(getPromptText(ZOOM_RATIO_TOO_LOW));
+			zoomratio = 1;
+		}
+		if (zoomratio > 1.2 && lang == 1) {
+			printf(getPromptText(ZOOM_RATIO_TOO_HIGH), 120);
+			zoomratio = 1.2;
+		}
+	}
+	guiWidth *= zoomratio;
+	guiHeight *= zoomratio;
 	wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Bill Statistics GUI"), NULL };
 	::RegisterClassEx(&wc);
 	hwnd = ::CreateWindow(wc.lpszClassName, _T("Bill Statistics GUI"), WS_OVERLAPPEDWINDOW, 100, 100, guiWidth, guiHeight, NULL, NULL, wc.hInstance, NULL);
+	zoomratio *= 18;
 	// Initialize Direct3D
 	if (!CreateDeviceD3D(hwnd)) {
 		CleanupDeviceD3D();
 		::UnregisterClass(wc.lpszClassName, wc.hInstance);
 		return 1;
 	}
-	double zoomratio = 1.0;
-	printf("Input zoom ratio, 1 for 100%: ");
-	scanf("%lf", &zoomratio);
-	zoomratio *= 18;
+	
 	// Show the window
 	::ShowWindow(hwnd, SW_SHOWDEFAULT);
 	::UpdateWindow(hwnd);
@@ -759,8 +636,10 @@ int main() {
 	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
 	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 	//IM_ASSERT(font != NULL);
-	lang = 0;
-	if (lang == 1) io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/SimHei.ttf", zoomratio);
+	if (lang == 1) {
+		printf(getPromptText(LOADING_LANG_INFO));
+		io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/SimHei.ttf", zoomratio, NULL, io.Fonts->GetGlyphRangesChineseFull());
+	}
 	// Our state
 	bool show_demo_window = true;
 	bool show_another_window = false;
@@ -830,39 +709,38 @@ remenu:
 		system("cls");
 		if (!usegui) {
 			fflush(stdin);
-
-			printf("[Main Menu]\n");
-			printf("Welcome to Bill Statistics Software! Choose what you want: \n");
-			printf("* Tip: The IDs without [] should be done with the order they lists\n");
-			printf(" 1. Load Image\n");
-			printf(" 2. Binarize the Image\n");
-			printf(" 3. Confirm Binarize\n");
-			printf(" 4. Load Image Data\n");
-			printf("[5]. Manual Removal Tool\n");
-			printf(" 6. Scan Connective Area\n");
-			printf(" 7. Automatic Text Areas Detecting\n");
-			printf(" 8. Picking Samples\n");
-			printf(" 9. Do Recognize\n");
-			printf(" 99. Exit\n");
-			printf(" 999. About\n");
-			printf("Your Choice: ");
+			printf(getPromptText(NOGUI_MAIN_MENU));
+			printf(getPromptText(NOGUI_WELCOME_MESSAGE));
+			printf(getPromptText(NOGUI_MAIN_MENU_TIP));
+			printf(getPromptText(NOGUI_OPTION_LOADIMG));
+			printf(getPromptText(NOGUI_OPTION_BINARIZE));
+			printf(getPromptText(NOGUI_OPTION_CONFIRMBINARIZE));
+			printf(getPromptText(NOGUI_OPTION_LOADIMGDATA));
+			printf(getPromptText(NOGUI_OPTION_MANUALREMOVALTOOL));
+			printf(getPromptText(NOGUI_OPTION_SCANCONNECTIVE));
+			printf(getPromptText(NOGUI_OPTION_SCANTEXTAREA));
+			printf(getPromptText(NOGUI_OPTION_PICKSAMPLE));
+			printf(getPromptText(NOGUI_OPTION_DORECOGNIZE));
+			printf(getPromptText(NOGUI_OPTION_EXIT));
+			printf(getPromptText(NOGUI_OPTION_ABOUT));
+			printf(getPromptText(NOGUI_MAIN_MENU_PROMPT_CHOOSE));
 			scanf("%d", &op);
 			system("cls");
 		}
 		else {
-			ImGui::Begin("Main Menu", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-			ImGui::Text("Welcome to Bill Statistics Software! Choose what you want: ");
-			ImGui::Text("* Tip: The names without [] should be done with the order they lists");
+			ImGui::Begin(getPromptText(GUI_MAIN_MENU), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Text(getPromptText(GUI_WELCOME_MESSAGE));
+			ImGui::Text(getPromptText(GUI_MAIN_MENU_TIP));
 		}
-		if (op == 1 || (usegui && ImGui::Button("Load Image"))) {
+		if (op == 1 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_LOADIMG)))) {
 reloadimg:
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			system("cls");
 			if (!usegui) {
-				printf("[Load Image]\n");
-				printf("Input exit to go back\n");
-				printf("After the input of file path, the preview will be shown, you need to close the window in order to continue the operation.");
-				printf("Input the RELATIVE path of the image: ");
+				printf(getPromptText(NOGUI_LOADIMG));
+				printf(getPromptText(NOGUI_LOADIMG_EXIT_PROMPT));
+				printf(getPromptText(NOGUI_LOADIMG_TIP));
+				printf(getPromptText(NOGUI_LOADIMG_INPUT_PROMPT));
 			}
 			else {
 				while (msg.message != WM_QUIT) {
@@ -872,12 +750,12 @@ reloadimg:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Load Image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Please input RELATIVE path of the image below:");
+					ImGui::Begin(getPromptText(GUI_LOADIMG), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_LOADIMG_INPUT_PROMPT));
 					ImGui::InputText("", textbuffer, 255);
-					if (ImGui::Button("Confirm")) { doEndFrame();break; }
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();break; }
 					ImGui::SameLine();
-					if (ImGui::Button("Exit")) { doEndFrame();goto remenu; }
+					if (ImGui::Button(getPromptText(GUI_BUTTON_EXIT))) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
 			}
@@ -889,7 +767,7 @@ reloadimg:
 			org = cv::imread(str);
 			if (org.empty()) {
 				if (!usegui) {
-					printf("Failed to load the image!");
+					printf(getPromptText(NOGUI_LOADIMG_FAIL_LOADING));
 					system("pause");
 					goto reloadimg;
 				}
@@ -902,9 +780,9 @@ reloadimg:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Failed to load the image!");
-						if (ImGui::Button("Back")) { doEndFrame();goto reloadimg; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_LOADIMG_FAIL_LOADING));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_BACK))) { doEndFrame();goto reloadimg; }
 						doEndFrame();
 					}
 				}
@@ -914,7 +792,7 @@ reloadimg:
 			if (org.cols < WinWidth) WinWidth = org.cols - 1;
 			if (p > 10000 * 10000) {
 				if (!usegui) {
-					printf("The image is too large!");
+					printf(getPromptText(NOGUI_LOADIMG_TOOLARGE));
 					system("pause");
 					goto reloadimg;
 				}
@@ -927,9 +805,9 @@ reloadimg:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("The image is too large!");
-						if (ImGui::Button("Back")) { doEndFrame();goto reloadimg; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_LOADIMG_TOOLARGE));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_BACK))) { doEndFrame();goto reloadimg; }
 						doEndFrame();
 					}
 				}
@@ -938,7 +816,7 @@ reloadimg:
 			show = org(rect);
 			passby = org;
 			if (!usegui) {
-				printf("Press Enter to close the window.");
+				printf(getPromptText(NOGUI_CLOSEWINDOW_PROMPT));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -948,20 +826,20 @@ reloadimg:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Load Image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Press Enter to close the window.");
+					ImGui::Begin(getPromptText(GUI_LOADIMG), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_CLOSEWINDOW_PROMPT));
 
 					doEndFrame();
 				}
 			}
-			WindowName = "Original Image";
-			cv::imshow("Original Image", show);
-			cv::setMouseCallback("Original Image", on_mouse);
+			WindowName = getPromptText(CV_LOADIMG_WINDOWNAME);
+			cv::imshow(getPromptText(CV_LOADIMG_WINDOWNAME), show);
+			cv::setMouseCallback(getPromptText(CV_LOADIMG_WINDOWNAME), on_mouse);
 			cv::waitKey(0);
-			cv::destroyWindow("Original Image");
+			cv::destroyWindow(getPromptText(CV_LOADIMG_WINDOWNAME));
 			if (!usegui) {
-				printf("Image loaded.\n");
-				printf("Do you want to change a file? Y to confirm, others to not confirm.");
+				printf(getPromptText(NOGUI_LOADIMG_SUCCESS));
+				printf(getPromptText(NOGUI_LOADIMG_CONFIRMFILE));
 			}
 			else {
 				while (msg.message != WM_QUIT) {
@@ -972,26 +850,26 @@ reloadimg:
 					}
 
 					doStartFrame();
-					ImGui::Begin("Question", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Image loaded.");
-					ImGui::Text("Would you like to change a file?");
-					if (ImGui::Button("Yes")) { str = "Y";doEndFrame();break; }
+					ImGui::Begin(getPromptText(GUI_PROMPT_QUESTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_LOADIMG_SUCCESS));
+					ImGui::Text(getPromptText(GUI_LOADIMG_CONFIRMFILE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_YES))) { str = "Y";doEndFrame();break; }
 					ImGui::SameLine();
-					if (ImGui::Button("No")) { str = "N";doEndFrame();break; }
+					if (ImGui::Button(getPromptText(GUI_BUTTON_NO))) { str = "N";doEndFrame();break; }
 					doEndFrame();
 				}
 			}
 			if (!usegui) std::cin >> str;
 			if (str == "Y") goto reloadimg;
 		}
-		else if (op == 2 || (usegui && ImGui::Button("Binarize Image"))) {
+		else if (op == 2 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_BINARIZE)))) {
 			system("cls");
-			printf("[Binarize Image]\n");
+			printf(getPromptText(NOGUI_BINARIZE));
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			if (!org.data) {
 
 				if (!usegui) {
-					printf("ERROR: ORIGINAL IMAGE NOT LOADED\n");
+					printf(getPromptText(NOGUI_BINARIZE_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -1004,15 +882,15 @@ reloadimg:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Original image not loaded.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_BINARIZE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
 			}
 			if (!usegui) {
-				printf("Scroll the bar to the position where best shows the information on your image and most of the other things were removed.\n");
+				printf(getPromptText(GUI_BINARIZE_TIP));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1022,28 +900,28 @@ reloadimg:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Binarize Image", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Scroll the bar to the position where best shows the information on your image and most of the other things were removed.");
-					ImGui::Text("Press Enter to confirm.");
+					ImGui::Begin(getPromptText(GUI_BINARIZE), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_BINARIZE_TIP));
+					ImGui::Text(getPromptText(GUI_CLOSEWINDOW_PROMPT));
 
 					doEndFrame();
 				}
 			}
-			WindowName = "Binarized Image";
-			cv::namedWindow("Binarized Image");
+			WindowName = getPromptText(CV_BINARIZE_WINDOWNAME);
+			cv::namedWindow(getPromptText(CV_BINARIZE_WINDOWNAME));
 			cv::cvtColor(org, bicolor, 7);
 			passby = bicolor;
 			rect = cv::Rect(0, 0, WinWidth, WinHeight);
 			show = bicolor(rect);
 			cv::imshow(WindowName, show);
-			cv::createTrackbar("threshold", "Binarized Image", 0, 255, onChangeTrackBar);
-			cv::setMouseCallback("Binarized Image", on_mouse);
+			cv::createTrackbar(getPromptText(CV_BINARIZE_THRESHOLD), getPromptText(CV_BINARIZE_WINDOWNAME), 0, 255, onChangeTrackBar);
+			cv::setMouseCallback(getPromptText(CV_BINARIZE_WINDOWNAME), on_mouse);
 			cv::waitKey(0);
-			cv::destroyWindow("Binarized Image");
+			cv::destroyWindow(getPromptText(CV_BINARIZE_WINDOWNAME));
 			confirmed = 0;
 			goto remenu;
 		}
-		else if (op == 3 || (usegui && ImGui::Button("Confirm Binarize"))) {
+		else if (op == 3 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_CONFIRMBINARIZE)))) {
 			printf("[Confirm Binarize]\n");
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			if (!bicolor.data) {
@@ -1113,7 +991,7 @@ reloadimg:
 				}
 			}
 		}
-		else if (op == 4 || (usegui && ImGui::Button("Load Image Data"))) {
+		else if (op == 4 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_LOADIMGDATA)))) {
 reloadimg_:
 			printf("[Load Image Data]\n");
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
@@ -1185,7 +1063,7 @@ reloadimg_:
 				}
 			}
 		}
-		else if (op == 5 || (usegui && ImGui::Button("Manual Removal Tool"))) {
+		else if (op == 5 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_MANUALREMOVALTOOL)))) {
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			printf("[Manual Removal Tool]\n");
 			if (!imgdata.size()) {
@@ -1240,8 +1118,7 @@ reloadimg_:
 			cv::destroyWindow("Removal Tool");
 			goto reloadimg_;
 		}
-		else if (op == 6 || (usegui && ImGui::Button("Scan Connective Area"))) {
-
+		else if (op == 6 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_SCANCONNECTIVE)))) {
 			printf("[Scan Connective Area]\n");
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 recalc:
@@ -1297,7 +1174,7 @@ recalc:
 				emp.push_back(0);
 			for (int i = 0;i < bicolor.rows;i++)
 				vis.push_back(emp);
-			cvtColor(bicolor, canv, 8);
+			cv::cvtColor(bicolor, canv, 8);
 			rect = cv::Rect(0, 0, WinWidth, WinHeight);
 			show = bicolor(rect);
 			cv::imshow("Connective Area Scanning", show);
@@ -1344,7 +1221,7 @@ recalc:
 			}
 			goto remenu;
 		}
-		else if (op == 7 || (usegui && ImGui::Button("Automatic Text Area Dectings"))) {
+		else if (op == 7 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_SCANTEXTAREA)))) {
 			printf("[Automatic Text Areas Detecting]\n");
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 redetect:
@@ -1470,7 +1347,7 @@ redetect:
 			cv::waitKey(0);
 			cv::destroyWindow("Automatic Text Areas Detecting");
 		}
-		else if (op == 8 || (usegui && ImGui::Button("Picking Samples"))) {
+		else if (op == 8 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_PICKSAMPLE)))) {
 			printf("[Picking Samples]\n");
 			if (!areainfo[0].size()) {
 				if (!usegui) {
@@ -1501,7 +1378,7 @@ redetect:
 			cv::destroyWindow("Current Choice");
 			goto remenu;
 		}
-		else if (op == 9 || (usegui && ImGui::Button("Do Recognize"))) {
+		else if (op == 9 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_DORECOGNIZE)))) {
 			printf("[Do Recognize]\n");
 			positive = negative = 0;
 			if (!fetched) {
@@ -1653,10 +1530,10 @@ rechoose:
 				}
 			}
 		}
-		else if (op == 99 || (usegui && ImGui::Button("Exit"))) {
+		else if (op == 99 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_EXIT)))) {
 			return 0;
 		}
-		else if (op == 999 || (usegui && ImGui::Button("About"))) {
+		else if (op == 999 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_ABOUT)))) {
 			if (!usegui) {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
 				printf("Version: 2.0.2 Beta\n");
 				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
@@ -1710,3 +1587,149 @@ rechoose:
 	::UnregisterClass(wc.lpszClassName, wc.hInstance);
 	return 0;
 }
+
+
+
+
+
+
+/*
+ORIGINAL MAIN CODE OF IMGUI SAMPLE
+// Main code
+int main(int, char**) {
+	// Create application window
+	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
+	::RegisterClassEx(&wc);
+	HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX9 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+
+	// Initialize Direct3D
+	if (!CreateDeviceD3D(hwnd)) {
+		CleanupDeviceD3D();
+		::UnregisterClass(wc.lpszClassName, wc.hInstance);
+		return 1;
+	}
+
+	// Show the window
+	::ShowWindow(hwnd, SW_SHOWDEFAULT);
+	::UpdateWindow(hwnd);
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// Setup Platform/Renderer bindings
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX9_Init(g_pd3dDevice);
+
+	// Load Fonts
+	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
+	// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
+	// - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
+	// - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
+	// - Read 'misc/fonts/README.txt' for more instructions and details.
+	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
+	//io.Fonts->AddFontDefault();
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
+	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+	//IM_ASSERT(font != NULL);
+
+	// Our state
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+	// Main loop
+	MSG msg;
+	ZeroMemory(&msg, sizeof(msg));
+	while (msg.message != WM_QUIT) {
+		// Poll and handle messages (inputs, window resize, etc.)
+		// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+		// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
+		// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
+		// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+		if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
+			continue;
+		}
+
+		// Start the Dear ImGui frame
+		ImGui_ImplDX9_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+		//if (show_demo_window)
+		//    ImGui::ShowDemoWindow(&show_demo_window);
+
+		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+		{
+			static float f = 0.0f;
+			static int counter = 0;
+
+			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+			ImGui::Checkbox("Another Window", &show_another_window);
+
+			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+			ImGui::ColorEdit3("clear color", (float*)& clear_color); // Edit 3 floats representing a color
+
+			if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+				counter++;
+			ImGui::SameLine();
+			ImGui::Text("counter = %d", counter);
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
+		// 3. Show another simple window.
+		if (show_another_window) {
+			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+			ImGui::Text("Hello from another window!");
+			if (ImGui::Button("Close Me"))
+				show_another_window = false;
+			ImGui::End();
+		}
+
+		// Rendering
+		ImGui::EndFrame();
+		g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, false);
+		g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
+		g_pd3dDevice->SetRenderState(D3DRS_SCISSORTESTENABLE, false);
+		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * 255.0f), (int)(clear_color.y * 255.0f), (int)(clear_color.z * 255.0f), (int)(clear_color.w * 255.0f));
+		g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
+		if (g_pd3dDevice->BeginScene() >= 0) {
+			ImGui::Render();
+			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+			g_pd3dDevice->EndScene();
+		}
+		HRESULT result = g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
+
+		// Handle loss of D3D9 device
+		if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
+			ResetDevice();
+	}
+
+	ImGui_ImplDX9_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
+	CleanupDeviceD3D();
+	::DestroyWindow(hwnd);
+	::UnregisterClass(wc.lpszClassName, wc.hInstance);
+
+	return 0;
+}
+*/
