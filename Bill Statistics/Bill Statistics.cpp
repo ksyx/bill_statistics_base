@@ -57,7 +57,7 @@ std::queue<data>que;
 std::vector<std::string>resultvec;
 std::priority_queue<data>pq_emp;
 int xd[4] = { -1,1,0,0 }, yd[4] = { 0,0,-1,1 }, id[20];char textbuffer[512];
-bool usegui;bool frameend;
+bool usegui;bool frameend;std::string finalresult;
 ImGuiIO tmpio;
 WNDCLASSEX wc;HWND hwnd;ImGuiIO& io = tmpio;ImVec4 clear_color;MSG msg;
 // Helper functions
@@ -662,12 +662,12 @@ int main() {
 		frameend = 0;
 		doStartFrame();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (0 && show_demo_window)
+		if (1 && show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
 
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-		if (0) {
+		if (1) {
 			static float f = 0.0f;
 			static int counter = 0;
 
@@ -922,11 +922,11 @@ reloadimg:
 			goto remenu;
 		}
 		else if (op == 3 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_CONFIRMBINARIZE)))) {
-			printf("[Confirm Binarize]\n");
+			printf(getPromptText(NOGUI_CONFIRMBINARIZE));
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			if (!bicolor.data) {
 				if (!usegui) {
-					printf("ERROR: IMAGE NOT BINARIZED!\n");
+					printf(getPromptText(NOGUI_CONFIRMBINARIZE_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -939,16 +939,16 @@ reloadimg:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Image not binarized.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_CONFIRMBINARIZE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
 			}
 			if (confirmed) {
 				if (!usegui) {
-					printf("ERROR: THIS BINARIZE HAS BEEN CONFIRMED!\n");
+					printf(getPromptText(NOGUI_CONFIRMBINARIZE_HAVE_BEEN_DONE));
 					system("pause");
 					goto remenu;
 				}
@@ -959,11 +959,10 @@ reloadimg:
 							::DispatchMessage(&msg);
 							continue;
 						}
-
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("This binarize has been confirmed.");
-						if (ImGui::Button("Confirm")) { doEndFrame(); goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_CONFIRMBINARIZE_HAVE_BEEN_DONE));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame(); goto remenu; }
 						doEndFrame();
 					}
 				}
@@ -971,7 +970,7 @@ reloadimg:
 			passby.copyTo(bicolor);
 			confirmed = 1;
 			if (!usegui) {
-				printf("Confirmed.\n");
+				printf(getPromptText(NOGUI_CONFIRMBINARIZE_OPERATION_COMPLETE));
 				system("pause");
 				goto remenu;
 			}
@@ -982,11 +981,10 @@ reloadimg:
 						::DispatchMessage(&msg);
 						continue;
 					}
-
 					doStartFrame();
-					ImGui::Begin("Info", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Confirmed.");
-					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					ImGui::Begin(getPromptText(GUI_PROMPT_INFO), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_CONFIRMBINARIZE_OPERATION_COMPLETE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
 			}
@@ -1505,6 +1503,15 @@ rechoose:
 				system("pause");
 			}
 			else {
+				finalresult = "";
+				for (int resid = 0;resid < resultvec.size();resid++) {
+					/*int l = resultvec[resid].length();
+					for (int resj = 0;resj < l;resj++)
+						textbuffer[resj] = resultvec[resid][resj];
+					textbuffer[l] = '\0';
+					ImGui::Text("%s", textbuffer);*/
+					finalresult += resultvec[resid] + '\n';
+				}
 				while (msg.message != WM_QUIT) {
 					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
 						::TranslateMessage(&msg);
@@ -1514,15 +1521,12 @@ rechoose:
 
 					doStartFrame();
 					ImGui::Begin("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					
+					
 					ImGui::Text("Original Entries:");
-					for (int resid = 0;resid < resultvec.size();resid++) {
-						int l = resultvec[resid].length();
-						for (int resj = 0;resj < l;resj++)
-							textbuffer[resj] = resultvec[resid][resj];
-						textbuffer[l] = '\0';
-						ImGui::Text("%s", textbuffer);
-					}
-					ImGui::Text("Original Entries:");
+					const char* text = finalresult.c_str();
+					ImGui::InputTextMultiline("##source", (char*)text, finalresult.length(), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
+					ImGui::Text("Statistics:");
 					ImGui::Text("Income %.2lf", positive);
 					ImGui::Text("Outgoing %.2lf", negative);
 					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }

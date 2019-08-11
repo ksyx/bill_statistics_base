@@ -68,7 +68,15 @@ enum promptName {
 	GUI_BINARIZE,
 	GUI_BINARIZE_TIP,
 	CV_BINARIZE_WINDOWNAME,
-	CV_BINARIZE_THRESHOLD
+	CV_BINARIZE_THRESHOLD,
+	NOGUI_CONFIRMBINARIZE,
+	NOGUI_CONFIRMBINARIZE_PREVIOUS_STEP_REQUIRED,
+	GUI_CONFIRMBINARIZE_PREVIOUS_STEP_REQUIRED,
+	NOGUI_CONFIRMBINARIZE_HAVE_BEEN_DONE,
+	GUI_CONFIRMBINARIZE_HAVE_BEEN_DONE,
+	NOGUI_CONFIRMBINARIZE_OPERATION_COMPLETE,
+	GUI_PROMPT_INFO,
+	GUI_CONFIRMBINARIZE_OPERATION_COMPLETE
 };
 const std::string promptData0[] = {
 	"Would you like to use GUI? 0 for no, others for yes: ",
@@ -95,7 +103,17 @@ const std::string promptData0[] = {
 	"Main Menu",
 	"Welcome to Bill Statistics Software! Choose what you want.",
 	"* Tip: The names without [] should be done with the order they lists, while the one with it is optional to execute.",
-	"Load Image",	"Binarize the Image",	"Confirm Binarize",	"Load Image Data",	"[Manual Removal Tool]",	"Scan Connective Area",	"Automatic Text Areas Detecting",	"Picking Samples",	"Do Recognize",	"Exit",	"About",
+	"Load Image",
+	"Binarize the Image",
+	"Confirm Binarize",
+	"Load Image Data",
+	"[Manual Removal Tool]",
+	"Scan Connective Area",
+	"Automatic Text Areas Detecting",
+	"Picking Samples",
+	"Do Recognize",
+	"Exit",
+	"About",
 	"[Load Image]\n",
 	"Input exit to go back\n",
 	"After the input of file path, the preview will be shown, you need to close the window by pressing Enter key in order to continue the operation.",
@@ -127,7 +145,15 @@ const std::string promptData0[] = {
 	"Binarize Image",
 	"Scroll the bar to the position where best shows the information on your image and most of the other things were removed.",
 	"Binarized Image",
-	"threshold"
+	"threshold",
+	"[Confirm Binarize]\n",
+	"ERROR: IMAGE NOT BINARIZED!\n",
+	"Image not binarized.",
+	"ERROR: THIS BINARIZE HAS BEEN CONFIRMED!\n",
+	"This binarize has been confirmed.",
+	"Confirmed.\n",
+	"Info",
+	"Confirmed."
 };
 
 const std::string promptData1[] = {
@@ -157,7 +183,7 @@ const std::string promptData1[] = {
 	u8"* 提示：名称不带 [] 应该按顺序执行，而带有的选项是否执行是可选的。",
 	u8"读取图像",
 	u8"图像二值化",
-	u8"确认二值化",
+	u8"[确认二值化]",
 	u8"读取图像数据",
 	u8"手动移除工具",
 	u8"检测联通块",
@@ -197,7 +223,15 @@ const std::string promptData1[] = {
 	u8"图像二值化",
 	"滑动选择器使得图像达到在重要信息得以保留前提下尽可能去除无用信息的状态。",
 	"结果预览",
-	"阈值"
+	"阈值",
+	"[确认二值化]\n",
+	"错误：图像尚未二值化！\n",
+	u8"图像尚未二值化。",
+	"错误：此次二值化已确认。\n",
+	u8"此次二值化已确认。",
+	"已确认。\n",
+	u8"信息",
+	u8"已确认"
 };
 
 const char* getPromptText(int promptID) {
