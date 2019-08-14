@@ -252,7 +252,7 @@ void ScanCA() {
 			}
 	show = canv(rect);
 	passby = canv;
-	cv::imshow("Connective Area Scanning", show);
+	cv::imshow(getPromptText(CV_SCANCONNECTIVE_WINDOWNAME), show);
 }
 void BFS_CA_(int sx, int sy, int id) {
 	data tmp, temp;
@@ -324,22 +324,22 @@ void on_pick_mouse(int event, int x, int y, int flags, void* ustc) {
 			//printf("Register %d->%d",id[trans],trans);
 			std::swap(x, y);
 			//printf("%d %d %d [%d,%d]-[%d,%d]\n",x,y,vis[x][y],cainfo[0][vis[x][y]-1].x,cainfo[0][vis[x][y]-1].y,cainfo[1][vis[x][y]-1].x,cainfo[1][vis[x][y]-1].y);
-			cv::destroyWindow("Current Choice");
+			cv::destroyWindow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME));
 			fetch = cv::Rect(cainfo[0][vis[x][y] - 1].y, cainfo[0][vis[x][y] - 1].x, cainfo[1][vis[x][y] - 1].y - cainfo[0][vis[x][y] - 1].y, cainfo[1][vis[x][y] - 1].x - cainfo[0][vis[x][y] - 1].x);
 			fetchshow = bicolor(fetch);
-			cv::imshow("Current Choice", fetchshow);
+			cv::imshow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME), fetchshow);
 			std::swap(x, y);
 		}
 		y -= rect.y;x -= rect.x;
 	}
 	if (event == 8) {
-		cv::destroyWindow("Current Choice");
-		cv::destroyWindow("Point Picking");
+		cv::destroyWindow(getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME));
+		cv::destroyWindow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME));
 		id[trans] = 0;
 	}
 	if (event == 9) {
-		cv::destroyWindow("Current Choice");
-		cv::destroyWindow("Point Picking");
+		cv::destroyWindow(getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME));
+		cv::destroyWindow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME));
 	}
 	if (!event && (flags & 1)) {
 		if (x >= 0 && x < WinWidth && y >= 0 && y < WinHeight) {
@@ -360,12 +360,12 @@ void on_pick_mouse(int event, int x, int y, int flags, void* ustc) {
 void DoFetchSample(int now) {
 	if (!usegui) {
 		system("cls");
-		printf("The followings are important, read it if you are not familiar with the process.\n");
-		printf("* Double left click on a black point to match sample and required information. If there is NO SUCH THING, double right-click on the image.\n");
-		printf("* Press Enter to confirm your choice.\n");
-		printf("Notice: once the window was closed, you can NOT go back, the ONLY way to change your choice is do the whole process again after completing all of the fetches THIS TIME.\n");
-		printf("There will be a window showing your choice.\n");
-		printf("Now Fetching: ");
+		printf(getPromptText(NOGUI_PICKSAMPLE_TIP_IMPORTANCE));
+		printf(getPromptText(NOGUI_PICKSAMPLE_TIP_OPERATION));
+		printf(getPromptText(NOGUI_PICKSAMPLE_TIP_COMPLETION));
+		printf(getPromptText(NOGUI_PICKSAMPLE_TIP_NOTICE));
+		printf(getPromptText(NOGUI_PICKSAMPLE_TIP_APPEARANCE));
+		printf(getPromptText(NOGUI_PICKSAMPLE_CURRENTITEM));
 		if (now <= 9) printf("%d", now); else if (now == 10) printf("."); else if (now == 11) printf("+"); else if (now == 12) printf("-");
 		printf("\n");
 		printf("\n");
@@ -378,30 +378,30 @@ void DoFetchSample(int now) {
 				continue;
 			}
 			doStartFrame();
-			ImGui::Begin("Guide on fetching samples", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-			ImGui::Text("The followings are important, read it if you are not familiar with the process.");
-			ImGui::Text("* double left click on a black point to match sample and required information. If there is NO SUCH THING, double right-click on the image.");
-			ImGui::Text("* Press Enter to confirm your choice.");
-			ImGui::Text("Notice: once the window was closed, you can NOT go back, the ONLY way to change your choice is do the whole process again after completing all of the fetches THIS TIME.");
-			ImGui::Text("There will be a window showing your choice.");
-			ImGui::Text("Now Fetching: ");
+			ImGui::Begin(getPromptText(GUI_PICKSAMPLE_GUIDE_CAPTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Text(getPromptText(GUI_PICKSAMPLE_TIP_IMPORTANCE));
+			ImGui::Text(getPromptText(GUI_PICKSAMPLE_TIP_OPERATION));
+			ImGui::Text(getPromptText(GUI_PICKSAMPLE_TIP_COMPLETION));
+			ImGui::Text(getPromptText(GUI_PICKSAMPLE_TIP_TICE));
+			ImGui::Text(getPromptText(GUI_PICKSAMPLE_TIP_APPEARANCE));
+			ImGui::Text(getPromptText(GUI_PICKSAMPLE_CURRENTITEM));
 			ImGui::SameLine();
 			if (now <= 9) ImGui::Text("%d", now); else if (now == 10) ImGui::Text("."); else if (now == 11) ImGui::Text("+"); else if (now == 12) ImGui::Text("-");
 			doEndFrame();
 		}
 	}
-	cv::namedWindow("Point Picking");
+	cv::namedWindow(getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME));
 	trans = now;
 	passby = bicolor;
 	rect = cv::Rect(0, 0, WinWidth, WinHeight);
 	show = bicolor(rect);
-	WindowName = "Point Picking";
+	WindowName = getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME);
 	cv::imshow(WindowName, show);
 	fetch = cv::Rect(0, 0, 100, 100);
 	cv::Mat tmp(100, 100, CV_8UC3, cv::Scalar(255, 255, 255));
 	fetchshow = tmp(fetch);
-	cv::imshow("Current Choice", fetchshow);
-	cv::setMouseCallback("Point Picking", on_pick_mouse);
+	cv::imshow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME), fetchshow);
+	cv::setMouseCallback(getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME), on_pick_mouse);
 	cv::waitKey(0);
 }
 void on_recognize_mouse(int event, int x, int y, int flags, void* ustc) {
@@ -662,12 +662,12 @@ int main() {
 		frameend = 0;
 		doStartFrame();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (1 && show_demo_window)
+		if (0 && show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
 
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-		if (1) {
+		if (0) {
 			static float f = 0.0f;
 			static int counter = 0;
 
@@ -991,11 +991,11 @@ reloadimg:
 		}
 		else if (op == 4 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_LOADIMGDATA)))) {
 reloadimg_:
-			printf("[Load Image Data]\n");
+			printf(getPromptText(NOGUI_LOADIMGDATA));
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 			if (!confirmed) {
 				if (!usegui) {
-					printf("ERROR: BINARIZE NOT CONFIRMED\n");
+					printf(getPromptText(NOGUI_LOADIMGDATA_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -1008,15 +1008,15 @@ reloadimg_:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Binarize not confirmed.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_LOADIMGDATA_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
 			}
 			if (!usegui) {
-				printf("Loading, please wait.\n");
+				printf(getPromptText(NOGUI_LOADING));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1026,8 +1026,8 @@ reloadimg_:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Work in progress", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Loading, please wait.");
+					ImGui::Begin(getPromptText(GUI_PROMPT_LOADING_CAPTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_PROMPT_LOADING_CONTENT));
 
 					doEndFrame();
 				}
@@ -1041,7 +1041,7 @@ reloadimg_:
 				}
 			}
 			if (!usegui) {
-				printf("Done.\n");
+				printf(getPromptText(NOGUI_DONE));
 				system("pause");
 				goto remenu;
 			}
@@ -1054,19 +1054,19 @@ reloadimg_:
 					}
 
 					doStartFrame();
-					ImGui::Begin("Info", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Done.");
-					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					ImGui::Begin(getPromptText(GUI_PROMPT_INFO), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_PROMPT_DONE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
 			}
 		}
 		else if (op == 5 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_MANUALREMOVALTOOL)))) {
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
-			printf("[Manual Removal Tool]\n");
+			printf(getPromptText(NOGUI_MANUALREMOVALTOOL));
 			if (!imgdata.size()) {
 				if (!usegui) {
-					printf("ERROR: IMAGE DATA NOT LOADED\n");
+					printf(getPromptText(NOGUI_MANUALREMOVALTOOL));
 					system("pause");
 					goto remenu;
 				}
@@ -1079,16 +1079,15 @@ reloadimg_:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Image data not loaded.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_MANUALREMOVALTOOL_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
 			}
 			if (!usegui) {
-				printf("Use this tool to remove the unimportant details from the image, once you dobule right-clicked a point, all of the points that have a fully-black path to it will be removed.\nNOTE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.\n");
-
+				printf(getPromptText(NOGUI_MANUALREMOVALTOOL_TIP));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1098,31 +1097,31 @@ reloadimg_:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Manual Removal Tool", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Use this tool to remove the unimportant details from the image, once you dobule right-clicked a point, ");
-					ImGui::Text("all of the points that have a fully-black path to it will be removed.");
-					ImGui::Text("NOTICE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.");
-					ImGui::Text("Press Enter to close the window and complete the operation.");
+					ImGui::Begin(getPromptText(GUI_MANUALREMOVALTOOL), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_MANUALREMOVALTOOL_PURPOSETIP));
+					ImGui::Text(getPromptText(GUI_MANUALREMOVALTOOL_BEHAVIORTIP));
+					ImGui::Text(getPromptText(GUI_MANUALREMOVALTOOL_NOTICE));
+					ImGui::Text(getPromptText(GUI_MANUALREMOVALTOOL_OPERATIONTIP));
 					//\nNOTICE THAT THIS OPERATION CAN NOT BE UNDID EXCEPT RELOADING THE IMAGE.
 					doEndFrame();
 				}
 			}
 			rect = cv::Rect(0, 0, WinWidth, WinHeight);
 			show = bicolor(rect);
-			cv::imshow("Removal Tool", show);
-			WindowName = "Removal Tool";
-			cv::setMouseCallback("Removal Tool", on_remove_mouse);
+			cv::imshow(getPromptText(CV_MANUALREMOVALTOOL_WINDOWNAME), show);
+			WindowName = getPromptText(CV_MANUALREMOVALTOOL_WINDOWNAME);
+			cv::setMouseCallback(getPromptText(CV_MANUALREMOVALTOOL_WINDOWNAME), on_remove_mouse);
 			cv::waitKey(0);
-			cv::destroyWindow("Removal Tool");
+			cv::destroyWindow(getPromptText(CV_MANUALREMOVALTOOL_WINDOWNAME));
 			goto reloadimg_;
 		}
 		else if (op == 6 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_SCANCONNECTIVE)))) {
-			printf("[Scan Connective Area]\n");
+			printf(getPromptText(NOGUI_SCANCONNECTIVE));
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 recalc:
 			if (!imgdata.size()) {
 				if (!usegui) {
-					printf("ERROR: IMAGE DATA NOT LOADED\n");
+					printf(getPromptText(NOGUI_SCANCONNECTIVE_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -1135,16 +1134,16 @@ recalc:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Image data not loaded.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_SCANCONNECTIVE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
 			}
 			if (cainfo[0].size()) {
 				if (!usegui) {
-					printf("Are you sure to calcuate the connective area AGAIN? Y to confirm, the others to not confirm.\n");
+					printf(getPromptText(NOGUI_SCANCONNECTIVE_ALREADYDONE));
 				}
 				else {
 					while (msg.message != WM_QUIT) {
@@ -1155,11 +1154,11 @@ recalc:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Question", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Are you sure to calcuate the connective area AGAIN?");
-						if (ImGui::Button("Yes")) { doEndFrame();str = "Y";break; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_QUESTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_SCANCONNECTIVE_ALREADYDONE));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_YES))) { doEndFrame();str = "Y";break; }
 						ImGui::SameLine();
-						if (ImGui::Button("No")) { doEndFrame();str = "N";break; }
+						if (ImGui::Button(getPromptText(GUI_BUTTON_NO))) { doEndFrame();str = "N";break; }
 						doEndFrame();
 					}
 				}
@@ -1175,13 +1174,13 @@ recalc:
 			cv::cvtColor(bicolor, canv, 8);
 			rect = cv::Rect(0, 0, WinWidth, WinHeight);
 			show = bicolor(rect);
-			cv::imshow("Connective Area Scanning", show);
-			WindowName = "Connective Area Scanning";
+			cv::imshow(getPromptText(CV_SCANCONNECTIVE_WINDOWNAME), show);
+			WindowName = getPromptText(CV_SCANCONNECTIVE_WINDOWNAME);
 			passby = bicolor;
-			cv::setMouseCallback("Connective Area Scanning", on_mouse);
+			cv::setMouseCallback(getPromptText(CV_SCANCONNECTIVE_WINDOWNAME), on_mouse);
 			ScanCA();
 			if (!usegui) {
-				printf("Completed, please press Enter.\n");
+				printf(getPromptText(NOGUI_SCANCONNECTIVE_DONE));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1191,16 +1190,16 @@ recalc:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Automatic Text Area Detect", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Completed, please press Enter.");
+					ImGui::Begin(getPromptText(GUI_SCANCONNECTIVE), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_SCANCONNECTIVE_DONE));
 					doEndFrame();
 				}
 			}
 			cv::waitKey(0);
-			cv::destroyWindow("Connective Area Scanning");
+			cv::destroyWindow(getPromptText(CV_SCANCONNECTIVE_WINDOWNAME));
 			if (!usegui) {
 				system("cls");
-				printf("Completed.\n");
+				printf(getPromptText(NOGUI_SCANCONNECTIVE_DONE));
 				system("pause");
 			}
 			else {
@@ -1211,21 +1210,21 @@ recalc:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Info", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Completed.");
-					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					ImGui::Begin(getPromptText(GUI_PROMPT_INFO), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_SCANCONNECTIVE_DONE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
 			}
 			goto remenu;
 		}
 		else if (op == 7 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_SCANTEXTAREA)))) {
-			printf("[Automatic Text Areas Detecting]\n");
+			printf(getPromptText(NOGUI_SCANTEXTAREA));
 			if (usegui && !frameend) { frameend = 1;doEndFrame(); }
 redetect:
 			if (!cainfo[0].size()) {
 				if (!usegui) {
-					printf("ERROR: CONNECTIVE AREA NOT DETECTED\n");
+					printf(getPromptText(NOGUI_SCANTEXTAREA_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -1238,16 +1237,16 @@ redetect:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Connective area not detected.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_SCANTEXTAREA_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
 			}
 			if (areainfo[0].size()) {
 				if (!usegui) {
-					printf("Are you sure to detect text areas AGAIN? Y to confirm, the others to not confirm.\n");
+					printf(getPromptText(NOGUI_SCANTEXTAREA_ALREADYDONE));
 				}
 				else {
 					while (msg.message != WM_QUIT) {
@@ -1258,11 +1257,11 @@ redetect:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Question", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Are you sure to detect text area AGAIN?");
-						if (ImGui::Button("Yes")) { doEndFrame();str = "Y";break; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_QUESTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_SCANTEXTAREA_ALREADYDONE));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_YES))) { doEndFrame();str = "Y";break; }
 						ImGui::SameLine();
-						if (ImGui::Button("No")) { doEndFrame();str = "N";break; }
+						if (ImGui::Button(getPromptText(GUI_BUTTON_NO))) { doEndFrame();str = "N";break; }
 						doEndFrame();
 					}
 				}
@@ -1274,12 +1273,12 @@ redetect:
 			rect = cv::Rect(0, 0, WinWidth, WinHeight);
 			cv::cvtColor(bicolor, canv, 8);
 			show = canv(rect);
-			cv::imshow("Automatic Text Areas Detecting", bicolor);
+			cv::imshow(getPromptText(CV_SCANTEXTAREA_WINDOWNAME), bicolor);
 			passby = canv;
-			WindowName = "Automatic Text Areas Detecting";
+			WindowName = getPromptText(CV_SCANTEXTAREA_WINDOWNAME);
 			cv::setMouseCallback(WindowName, on_mouse);
 			if (!usegui) {
-				printf("Preparing...\n");
+				printf(getPromptText(NOGUI_SCANTEXTAREA_PREPARING));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1289,8 +1288,8 @@ redetect:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Work in progress", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Preparing for the detection...");
+					ImGui::Begin(getPromptText(GUI_PROMPT_LOADING_CAPTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_SCANTEXTAREA_PREPARING));
 					doEndFrame();
 				}
 			}
@@ -1304,7 +1303,7 @@ redetect:
 			}
 
 			if (!usegui) {
-				printf("Calculating Text Areas...\n");
+				printf(getPromptText(NOGUI_SCANTEXTAREA_WORKING));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1314,8 +1313,8 @@ redetect:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Work in progress", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Calculating Text Areas...");
+					ImGui::Begin(getPromptText(GUI_PROMPT_LOADING_CAPTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_SCANTEXTAREA_WORKING));
 					doEndFrame();
 				}
 			}
@@ -1327,7 +1326,7 @@ redetect:
 			ScanCA_();
 			emp.clear();imgdata_.clear();
 			if (!usegui) {
-				printf("Completed, please press Enter.\n");
+				printf(getPromptText(NOGUI_SCANCONNECTIVE_DONE));
 			}
 			else {
 				for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1337,19 +1336,19 @@ redetect:
 						continue;
 					}
 					doStartFrame();
-					ImGui::Begin("Automatic Text Area Detect", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Completed, please press Enter.");
+					ImGui::Begin(getPromptText(GUI_SCANCONNECTIVE), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_SCANCONNECTIVE_DONE));
 					doEndFrame();
 				}
 			}
 			cv::waitKey(0);
-			cv::destroyWindow("Automatic Text Areas Detecting");
+			cv::destroyWindow(getPromptText(CV_SCANTEXTAREA_WINDOWNAME));
 		}
 		else if (op == 8 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_PICKSAMPLE)))) {
-			printf("[Picking Samples]\n");
+			printf(getPromptText(NOGUI_PICKSAMPLE));
 			if (!areainfo[0].size()) {
 				if (!usegui) {
-					printf("ERROR: TEXT AREA NOT DETECTED\n");
+					printf(getPromptText(NOGUI_PICKSAMPLE_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -1362,9 +1361,9 @@ redetect:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Text area not detected.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_PICKSAMPLE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
@@ -1372,16 +1371,16 @@ redetect:
 			for (int i = 0;i <= 12;i++)
 				DoFetchSample(i);
 			fetched = 1;
-			cv::destroyWindow("Point Picking");
-			cv::destroyWindow("Current Choice");
+			cv::destroyWindow(getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME));
+			cv::destroyWindow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME));
 			goto remenu;
 		}
 		else if (op == 9 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_DORECOGNIZE)))) {
-			printf("[Do Recognize]\n");
+			printf(getPromptText(NOGUI_DORECOGNIZE));
 			positive = negative = 0;
 			if (!fetched) {
 				if (!usegui) {
-					printf("ERROR: SAMPLE NOT FETCHED!\n");
+					printf(getPromptText(NOGUI_DORECOGNIZE_PREVIOUS_STEP_REQUIRED));
 					system("pause");
 					goto remenu;
 				}
@@ -1394,9 +1393,9 @@ redetect:
 						}
 
 						doStartFrame();
-						ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Sample not fetched.");
-						if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_DORECOGNIZE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 						doEndFrame();
 					}
 				}
@@ -1406,8 +1405,8 @@ rechoose:
 			for (int i = 0;i < 2;i++) {
 				if (!usegui) {
 					system("cls");
-					printf("[Do Recognize]\n");
-					printf("Double left-click to choose point, now choose %s point. Double right-click to confirm.\n", i ? "RIGHT-DOWN" : "LEFT-UP");
+					printf(getPromptText(NOGUI_DORECOGNIZE));
+					printf(getPromptText(NOGUI_DORECOGNIZE_GUIDE), i ? getPromptText(NOGUI_DORECOGNIZE_RIGHTDOWN) : getPromptText(NOGUI_DORECOGNIZE_LEFTUP));
 				}
 				else {
 					for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
@@ -1417,24 +1416,24 @@ rechoose:
 							continue;
 						}
 						doStartFrame();
-						ImGui::Begin("Do Recognize", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-						ImGui::Text("Double left-click to choose point, now choose %s point. Double right-click to confirm.\n", i ? "RIGHT-DOWN" : "LEFT-UP");
+						ImGui::Begin(getPromptText(GUI_DORECOGNIZE), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_DORECOGNIZE_GUIDE), i ? getPromptText(GUI_DORECOGNIZE_RIGHTDOWN) : getPromptText(GUI_DORECOGNIZE_LEFTUP));
 						doEndFrame();
 					}
 				}
 				passby = bicolor;
 				trans = i;
-				WindowName = "Select Point";
+				WindowName = getPromptText(CV_DORECOGNIZE_WINDOWNAME);
 				rect = cv::Rect(0, 0, WinWidth, WinHeight);
 				show = bicolor(rect);
-				cv::imshow("Select Point", show);
+				cv::imshow(getPromptText(CV_DORECOGNIZE_WINDOWNAME), show);
 				cv::setMouseCallback(WindowName, on_recognize_mouse);
 				cv::waitKey(0);
-				cv::destroyWindow("Select Point");
+				cv::destroyWindow(getPromptText(CV_DORECOGNIZE_WINDOWNAME));
 				if (i) {
 					if (range[0][0] > range[1][0] || range[0][1] > range[1][1]) {
 						if (!usegui) {
-							printf("ERROR: INVAILD RANGE\n");
+							printf(getPromptText(NOGUI_DORECOGNIZE_INVAILDINPUT));
 							system("pause");
 							goto rechoose;
 						}
@@ -1447,9 +1446,9 @@ rechoose:
 								}
 
 								doStartFrame();
-								ImGui::Begin("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-								ImGui::Text("Invaild Range.");
-								if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+								ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+								ImGui::Text(getPromptText(GUI_DORECOGNIZE_INVAILDINPUT));
+								if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 								doEndFrame();
 							}
 						}
@@ -1483,7 +1482,7 @@ rechoose:
 					}
 				}
 			std::string tmp;
-			if (!usegui)printf("Original Entries:\n");
+			if (!usegui)printf(getPromptText(NOGUI_DORECOGNIZE_ORIGINALENTRIES));
 			if (usegui) resultvec.clear();
 			for (int i = 1;i <= cntsa_;i++) {
 				if (textinfo[i].size()) {
@@ -1499,7 +1498,7 @@ rechoose:
 				}
 			}
 			if (!usegui) {
-				printf("Result: income %.2lf | outgoing %.2lf\n", positive, negative);
+				printf(getPromptText(NOGUI_DORECOGNIZE_SUMMARY), positive, negative);
 				system("pause");
 			}
 			else {
@@ -1520,16 +1519,16 @@ rechoose:
 					}
 
 					doStartFrame();
-					ImGui::Begin("Result", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Begin(getPromptText(GUI_DORECOGNIZE_RESULT_CAPTION), NULL, ImGuiWindowFlags_AlwaysAutoResize);
 					
 					
-					ImGui::Text("Original Entries:");
+					ImGui::Text(getPromptText(GUI_DORECOGNIZE_ORIGINALENTRIES));
 					const char* text = finalresult.c_str();
 					ImGui::InputTextMultiline("##source", (char*)text, finalresult.length(), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_ReadOnly);
-					ImGui::Text("Statistics:");
-					ImGui::Text("Income %.2lf", positive);
-					ImGui::Text("Outgoing %.2lf", negative);
-					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					ImGui::Text(getPromptText(GUI_DORECOGNIZE_SUMMARY));
+					ImGui::Text(getPromptText(GUI_DORECOGNIZE_INCOME), positive);
+					ImGui::Text(getPromptText(GUI_DORECOGNIZE_OUTGOING), negative);
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
 			}
@@ -1539,7 +1538,8 @@ rechoose:
 		}
 		else if (op == 999 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_ABOUT)))) {
 			if (!usegui) {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
-				printf("Version: 2.0.2 Beta\n");
+				//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
+				printf("Version: %s\n", "2.1.2 Beta");
 				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
 				printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 				printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
@@ -1560,10 +1560,10 @@ rechoose:
 						::DispatchMessage(&msg);
 						continue;
 					}
-						
 					doStartFrame();
-					ImGui::Begin("About", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text("Version: 2.0.2 Beta\n");
+					ImGui::Begin(getPromptText(GUI_ABOUT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
+					ImGui::Text("Version: %s\n", "2.1.2 Beta");
 					ImGui::Text("Copyright (C) ksyx 2019, licensed under MIT license.\n");
 					ImGui::Text("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 					ImGui::Text("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
@@ -1574,7 +1574,7 @@ rechoose:
 					ImGui::Text("Copyright (C) 2015-2016, Itseez Inc., all rights reserved.\n");
 					ImGui::Text("Third party copyrights are property of their respective owners.\n");
 					ImGui::Text("This product used ocornut/imgui, which licensed under MIT License.");
-					if (ImGui::Button("Confirm")) { doEndFrame();goto remenu; }
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
 					doEndFrame();
 				}
 			}
