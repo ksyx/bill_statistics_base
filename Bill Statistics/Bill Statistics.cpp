@@ -23,6 +23,7 @@
 #undef min
 #undef max
 #include "lang.h"
+struct IntegerCharFilter { static int FilterIntNumbers(ImGuiInputTextCallbackData* data) { if (data->EventChar < 256 && strchr("0123456789", (char)data->EventChar)) return 0; return 1; } };
 // Data
 static LPDIRECT3D9              g_pD3D = NULL;
 static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
@@ -511,6 +512,24 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 	//cv::waitKey(0);
 	//printf("This is %d\n",maxid);
 	return maxid;
+}
+void SaveImage(int x1, int y1, int x2, int y2,int major,int minor) {
+	rect = cv::Rect(y1, x1, y2 - y1 + 1, x2 - x1 + 1);
+	printf("%d %d %d %d %d %d: ", x1, y1, x2, y2, major, minor);
+	mat1 = bicolor(rect);
+	std::string filename = "output/export_", tmp="";
+	while (major) { tmp += (char)(major % 10 + '0');major /= 10; }
+	std::reverse(tmp.begin(), tmp.end());
+	filename += tmp + "_";
+	tmp = "";
+	while (minor) { tmp += (char)(minor % 10 + '0');minor /= 10; }
+	std::reverse(tmp.begin(), tmp.end());
+	filename += tmp + ".jpg";
+	
+	//std::cout << filename << "\n";
+	cv::imwrite(filename, mat1);
+	//cv::imshow("DebugWindow", mat1);
+	//cv::waitKey(0);
 }
 char GetChar(int x) {
 	if (x <= 9)return x + '0'; else if (x == 10) return '.'; else if (x == 11) return '+'; else if (x == 12) return '-'; else return '?';
@@ -1448,7 +1467,7 @@ rechoose:
 								doStartFrame();
 								ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
 								ImGui::Text(getPromptText(GUI_DORECOGNIZE_INVAILDINPUT));
-								if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
+								if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto rechoose; }
 								doEndFrame();
 							}
 						}
@@ -1465,10 +1484,11 @@ rechoose:
 			for (int i = range[0][0];i <= range[1][0];i++)
 				for (int j = range[0][1];j <= range[1][1];j++) {
 					//printf("%d %d %d %d %d | %d %d\n",i,j,imgdata[i][j],visarea[vis_[i][j]],visca[vis[i][j]], vis_[i][j],vis[i][j]);
-					if (imgdata[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
+					if (imgdata[i][j] && vis[i][j] && vis_[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
 						int pp = i, qq = j;
 						int v = GetResponse(cainfo[0][vis[i][j] - 1].x, cainfo[0][vis[i][j] - 1].y, cainfo[1][vis[i][j] - 1].x, cainfo[1][vis[i][j] - 1].y);
 						i = (cainfo[0][vis[i][j] - 1].x + cainfo[1][vis[i][j] - 1].x) / 2;j = (cainfo[0][vis[i][j] - 1].y + cainfo[1][vis[i][j] - 1].y) / 2;
+
 						visca[vis[i][j]] = 1;
 						if (v == -1) {
 							visarea[vis_[i][j]] = 1;
@@ -1532,6 +1552,168 @@ rechoose:
 					doEndFrame();
 				}
 			}
+		}
+		else if (op == 10 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_EXPORT)))) {
+			printf(getPromptText(NOGUI_EXPORT));
+			positive = negative = 0;
+			if (!fetched) {
+				if (!usegui) {
+					printf(getPromptText(NOGUI_DORECOGNIZE_PREVIOUS_STEP_REQUIRED));
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_DORECOGNIZE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			visca.clear();visarea.clear();textinfo.clear();
+rechoosing:
+			for (int i = 0;i < 2;i++) {
+				if (!usegui) {
+					system("cls");
+					printf(getPromptText(NOGUI_EXPORT));
+					printf(getPromptText(NOGUI_DORECOGNIZE_GUIDE), i ? getPromptText(NOGUI_DORECOGNIZE_RIGHTDOWN) : getPromptText(NOGUI_DORECOGNIZE_LEFTUP));
+				}
+				else {
+					for (int frap = 1;frap <= 60 && msg.message != WM_QUIT;frap++) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+						doStartFrame();
+						ImGui::Begin(getPromptText(GUI_EXPORT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_DORECOGNIZE_GUIDE), i ? getPromptText(GUI_DORECOGNIZE_RIGHTDOWN) : getPromptText(GUI_DORECOGNIZE_LEFTUP));
+						doEndFrame();
+					}
+				}
+				passby = bicolor;
+				trans = i;
+				WindowName = getPromptText(CV_EXPORT_WINDOWNAME);
+				rect = cv::Rect(0, 0, WinWidth, WinHeight);
+				show = bicolor(rect);
+				cv::imshow(getPromptText(CV_EXPORT_WINDOWNAME), show);
+				cv::setMouseCallback(WindowName, on_recognize_mouse);
+				cv::waitKey(0);
+				cv::destroyWindow(getPromptText(CV_EXPORT_WINDOWNAME));
+				if (i) {
+					if (range[0][0] > range[1][0] || range[0][1] > range[1][1]) {
+						if (!usegui) {
+							printf(getPromptText(NOGUI_DORECOGNIZE_INVAILDINPUT));
+							system("pause");
+							goto rechoosing;
+						}
+						else {
+							while (msg.message != WM_QUIT) {
+								if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+									::TranslateMessage(&msg);
+									::DispatchMessage(&msg);
+									continue;
+								}
+
+								doStartFrame();
+								ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+								ImGui::Text(getPromptText(GUI_DORECOGNIZE_INVAILDINPUT));
+								if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto rechoosing; }
+								doEndFrame();
+							}
+						}
+					}
+				}
+			}
+			int entryamount=0;
+reenter:
+			if (!usegui) {
+				printf(getPromptText(NOGUI_EXPORT_PROMPT_ENTRYNUM_INPUT));
+				scanf("%d", &entryamount);
+			}
+			else {
+				textbuffer[0] = 0;
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin(getPromptText(GUI_PROMPT_INPUT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_EXPORT_PROMPT_ENTRYNUM_INPUT));
+					
+					ImGui::InputText("", textbuffer, 64, ImGuiInputTextFlags_CallbackCharFilter, IntegerCharFilter::FilterIntNumbers);
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();break; }
+					doEndFrame();
+				}
+				char* cur=textbuffer;
+				while (*cur != '\0') 	{
+					entryamount = entryamount * 10 + (*cur) - '0';
+					cur++;
+				}
+			}
+			if (!entryamount) 	{
+				if (!usegui) {
+					printf(getPromptText(NOGUI_EXPORT_INVAILDINPUT));
+					system("pause");
+					goto reenter;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+						doStartFrame();
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_EXPORT_INVAILDINPUT));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto reenter; }
+						doEndFrame();
+					}
+				}
+			}
+			for (int i = 0;i <= cntsa;i++)
+				visca.push_back(0);
+			for (int i = 0;i <= cntsa_;i++) {
+				visarea.push_back(0);
+				textinfo.push_back(pq_emp);
+			}
+			//printf("%d %d %d %d\n",range[0][0],range[0][1],range[1][0],range[1][1]);
+			int major = 1, minor = 0;
+			for (int i = range[0][0];i <= range[1][0];i++)
+				for (int j = range[0][1];j <= range[1][1];j++) {
+					//printf("%d %d %d %d %d | %d %d\n",i,j,imgdata[i][j],visarea[vis_[i][j]],visca[vis[i][j]], vis_[i][j],vis[i][j]);
+					if (imgdata[i][j] && vis[i][j] && vis_[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
+						int pp = i, qq = j;
+						minor++;
+						if (minor > entryamount) { minor = 1;major++; }
+						//printf("Now: %d %d\n", i, j);fflush(stdout);
+						SaveImage(areainfo[0][vis_[i][j] - 1].x, areainfo[0][vis_[i][j] - 1].y, areainfo[1][vis_[i][j] - 1].x, areainfo[1][vis_[i][j] - 1].y,major,minor);
+						/*int tt,ss;
+						tt = (areainfo[0][vis[i][j] - 1].x + areainfo[1][vis[i][j] - 1].x) / 2;ss = (areainfo[0][vis[i][j] - 1].y + areainfo[1][vis[i][j] - 1].y) / 2;
+						i = tt;j = ss;*/
+						visarea[vis_[i][j]] = 1;
+						/*if (v == -1) {
+							visarea[vis_[i][j]] = 1;
+							continue;
+						}
+						data tmp;
+						tmp.x = v;tmp.y = cainfo[0][vis[i][j] - 1].y;
+						textinfo[vis_[i][j]].push(tmp);
+						//printf("%d %d At area %d, Add %d with Y=%d\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y);*/
+						i = pp;j = qq;
+					}
+				}
 		}
 		else if (op == 99 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_EXIT)))) {
 			return 0;

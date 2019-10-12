@@ -36,6 +36,7 @@ enum promptName {
 	GUI_OPTION_SCANTEXTAREA,
 	GUI_OPTION_PICKSAMPLE,
 	GUI_OPTION_DORECOGNIZE,
+	GUI_OPTION_EXPORT,
 	GUI_OPTION_EXIT,
 	GUI_OPTION_ABOUT,
 	NOGUI_LOADIMG,
@@ -154,7 +155,15 @@ enum promptName {
 	GUI_DORECOGNIZE_SUMMARY,
 	GUI_DORECOGNIZE_INCOME,
 	GUI_DORECOGNIZE_OUTGOING,
-	GUI_ABOUT
+	GUI_ABOUT,
+	NOGUI_EXPORT,
+	GUI_EXPORT,
+	CV_EXPORT_WINDOWNAME,
+	NOGUI_EXPORT_PROMPT_ENTRYNUM_INPUT,
+	GUI_PROMPT_INPUT,
+	GUI_EXPORT_PROMPT_ENTRYNUM_INPUT,
+	NOGUI_EXPORT_INVAILDINPUT,
+	GUI_EXPORT_INVAILDINPUT
 };
 const std::string promptData0[] = {
 	"Would you like to use GUI? 0 for no, others for yes: ",
@@ -190,6 +199,7 @@ const std::string promptData0[] = {
 	"Automatic Text Areas Detecting",
 	"Picking Samples",
 	"Do Recognize",
+	"Export Text Images",
 	"Exit",
 	"About",
 	"[Load Image]\n",
@@ -307,7 +317,15 @@ const std::string promptData0[] = {
 	"Summary:",
 	"Income %.2lf",
 	"Outgoing %.2lf",
-	"About"
+	"About",
+	"[Export Text Images]\n",
+	"Export Text Images",
+	"Export Text Images",
+	"Please input the number of entries in each data: ",
+	"Input",
+	"Please input the number of entries in each data.",
+	"Invaild Input.",
+	"Invaild Input."
 };
 
 const std::string promptData1[] = {
@@ -344,6 +362,7 @@ const std::string promptData1[] = {
 	u8"检测文字区域",
 	u8"采样",
 	u8"识别",
+	u8"导出文本图像",
 	u8"退出",
 	u8"关于",
 	"[读取图像]\n",
@@ -461,7 +480,15 @@ const std::string promptData1[] = {
 	u8"小结",
 	u8"收入 %.2lf",
 	u8"支出 %.2lf",
-	u8"关于"
+	u8"关于",
+	"[导出文本图像]\n",
+	u8"导出文本图像",
+	"导出文本图像",
+	"请输入各项中数据数：",
+	u8"输入",
+	u8"请输入各项中数据数。",
+	"无效输入。",
+	u8"无效输入。"
 };
 
 const char* getPromptText(int promptID) {
