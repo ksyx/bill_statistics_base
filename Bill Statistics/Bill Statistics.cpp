@@ -1721,7 +1721,7 @@ reenter:
 		else if (op == 999 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_ABOUT)))) {
 			if (!usegui) {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
 				//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
-				printf("Version: %s\n", "2.1.2 Beta");
+				printf("Version: %s\n", "2.2.1 Beta");
 				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
 				printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 				printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
@@ -1745,7 +1745,7 @@ reenter:
 					doStartFrame();
 					ImGui::Begin(getPromptText(GUI_ABOUT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
 					//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
-					ImGui::Text("Version: %s\n", "2.1.2 Beta");
+					ImGui::Text("Version: %s\n", "2.2.1 Beta");
 					ImGui::Text("Copyright (C) ksyx 2019, licensed under MIT license.\n");
 					ImGui::Text("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 					ImGui::Text("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
