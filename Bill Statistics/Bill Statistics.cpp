@@ -140,6 +140,26 @@ void BFS_remove(int sx, int sy) {
 		}
 	}
 }
+std::string getFilenameString(int major, int minor, std::string filenameprefix) {
+	//rect = cv::Rect(y1, x1, y2 - y1 + 1, x2 - x1 + 1);
+	//printf("%d %d %d %d %d %d: ", x1, y1, x2, y2, major, minor);
+	//mat1 = bicolor(rect);
+	std::string filename = filenameprefix, tmp = "";
+	if (major == 0) tmp = "0";
+	while (major) { tmp += (char)(major % 10 + '0');major /= 10; }
+	std::reverse(tmp.begin(), tmp.end());
+	filename += tmp + "_";
+	tmp = "";
+	if (minor == 0) tmp = "0";
+	while (minor) { tmp += (char)(minor % 10 + '0');minor /= 10; }
+	std::reverse(tmp.begin(), tmp.end());
+	filename += tmp + ".jpg";
+	return filename;
+	//std::cout << filename << "\n";
+	//cv::imwrite(filename, mat1);
+	//cv::imshow("DebugWindow", mat1);
+	//cv::waitKey(0);
+}
 void on_remove_mouse(int event, int x, int y, int flags, void* ustc) {
 	static cv::Point p0;
 	static int lastx, lasty;
@@ -482,7 +502,7 @@ double CalcSSIM() {
 int GetResponse(int x1, int y1, int x2, int y2) {
 	//printf("%d %d %d %d\n",x1,y1,x2,y2);
 	double max = -1, ret;int maxid = -1;
-	for (int i = 0;i <= 12;i++) {
+	for (int i = 0;i < 13;i++) {
 		if (!id[i]) continue;
 		/*
 		DEBUGGING
@@ -494,9 +514,18 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 		//printf("%d %d %d %d %d\n",id[i],cainfo[0][id[i]-1].y,cainfo[0][id[i]-1].x,cainfo[1][id[i]-1].y-cainfo[0][id[i]-1].y,cainfo[1][id[i]-1].x-cainfo[0][id[i]-1].x); 
 		rect = cv::Rect(y1, x1, y2 - y1 + 1, x2 - x1 + 1);
 		mat1 = bicolor(rect);
-		rect = cv::Rect(cainfo[0][id[i] - 1].y, cainfo[0][id[i] - 1].x, cainfo[1][id[i] - 1].y - cainfo[0][id[i] - 1].y + 1, cainfo[1][id[i] - 1].x - cainfo[0][id[i] - 1].x + 1);
-		//printf("Chk: %d %d %d %d\n",cainfo[0][id[i]-1].y,cainfo[0][id[i]-1].x,cainfo[1][id[i]-1].y-cainfo[0][id[i]-1].y,cainfo[1][id[i]-1].x-cainfo[0][id[i]-1].x);
-		mat2 = bicolor(rect);
+		if (id[i] > 0) 	{
+			rect = cv::Rect(cainfo[0][id[i] - 1].y, cainfo[0][id[i] - 1].x, cainfo[1][id[i] - 1].y - cainfo[0][id[i] - 1].y + 1, cainfo[1][id[i] - 1].x - cainfo[0][id[i] - 1].x + 1);
+			//printf("Chk: %d %d %d %d\n",cainfo[0][id[i]-1].y,cainfo[0][id[i]-1].x,cainfo[1][id[i]-1].y-cainfo[0][id[i]-1].y,cainfo[1][id[i]-1].x-cainfo[0][id[i]-1].x);
+			mat2 = bicolor(rect);
+		}
+		else {
+			cv::Mat mat3,mat4;
+			mat3 = cv::imread(getFilenameString(-id[i]-1,1,"samples/sample"));
+			if (mat3.empty()) continue;
+			cv::cvtColor(mat3, mat4, 7);
+			cv::threshold(mat4, mat2, 127, 255, 0);
+		}
 		//printf("Possbility of %d: ",i);
 		ret = CalcSSIM();
 		if (ret > max) {
@@ -513,15 +542,17 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 	//printf("This is %d\n",maxid);
 	return maxid;
 }
-void SaveImage(int x1, int y1, int x2, int y2,int major,int minor) {
+void SaveImage(int x1, int y1, int x2, int y2,int major,int minor,std::string filenameprefix) {
 	rect = cv::Rect(y1, x1, y2 - y1 + 1, x2 - x1 + 1);
-	printf("%d %d %d %d %d %d: ", x1, y1, x2, y2, major, minor);
+	//printf("%d %d %d %d %d %d: ", x1, y1, x2, y2, major, minor);
 	mat1 = bicolor(rect);
-	std::string filename = "output/export_", tmp="";
+	std::string filename = filenameprefix, tmp="";
+	if (major == 0) tmp = "0";
 	while (major) { tmp += (char)(major % 10 + '0');major /= 10; }
 	std::reverse(tmp.begin(), tmp.end());
 	filename += tmp + "_";
 	tmp = "";
+	if (minor == 0) tmp = "0";
 	while (minor) { tmp += (char)(minor % 10 + '0');minor /= 10; }
 	std::reverse(tmp.begin(), tmp.end());
 	filename += tmp + ".jpg";
@@ -533,6 +564,10 @@ void SaveImage(int x1, int y1, int x2, int y2,int major,int minor) {
 }
 char GetChar(int x) {
 	if (x <= 9)return x + '0'; else if (x == 10) return '.'; else if (x == 11) return '+'; else if (x == 12) return '-'; else return '?';
+}
+int doSameLine() {
+	ImGui::SameLine();
+	return 1;
 }
 void doEndFrame() {
 	//ImGui::End();
@@ -1216,25 +1251,6 @@ recalc:
 			}
 			cv::waitKey(0);
 			cv::destroyWindow(getPromptText(CV_SCANCONNECTIVE_WINDOWNAME));
-			if (!usegui) {
-				system("cls");
-				printf(getPromptText(NOGUI_SCANCONNECTIVE_DONE));
-				system("pause");
-			}
-			else {
-				while (msg.message != WM_QUIT) {
-					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
-						::TranslateMessage(&msg);
-						::DispatchMessage(&msg);
-						continue;
-					}
-					doStartFrame();
-					ImGui::Begin(getPromptText(GUI_PROMPT_INFO), NULL, ImGuiWindowFlags_AlwaysAutoResize);
-					ImGui::Text(getPromptText(GUI_SCANCONNECTIVE_DONE));
-					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
-					doEndFrame();
-				}
-			}
 			goto remenu;
 		}
 		else if (op == 7 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_SCANTEXTAREA)))) {
@@ -1393,6 +1409,32 @@ redetect:
 			cv::destroyWindow(getPromptText(CV_PICKSAMPLE_IMAGE_WINDOWNAME));
 			cv::destroyWindow(getPromptText(CV_PICKSAMPLE_SAMPLE_WINDOWNAME));
 			goto remenu;
+		}
+		else if (op == 12 || usegui && doSameLine() && ImGui::Button(getPromptText(GUI_OPTION_LOADSAMPLE))) {
+			for (int i = 0;i < 13;i++) {
+					mat2 = cv::imread(getFilenameString(i,1,"samples/sample"));
+					if (!mat2.empty()) {
+						id[i] = -i-1;
+						fetched = 1;
+					}
+				}
+			if (!usegui) {
+				printf(getPromptText(NOGUI_SCANCONNECTIVE_DONE));
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin(getPromptText(GUI_LOADSAMPLE), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_EXPORT_DONE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
 		}
 		else if (op == 9 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_DORECOGNIZE)))) {
 			printf(getPromptText(NOGUI_DORECOGNIZE));
@@ -1556,7 +1598,7 @@ rechoose:
 		else if (op == 10 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_EXPORT)))) {
 			printf(getPromptText(NOGUI_EXPORT));
 			positive = negative = 0;
-			if (!fetched) {
+			if (!areainfo[0].size()) {
 				if (!usegui) {
 					printf(getPromptText(NOGUI_DORECOGNIZE_PREVIOUS_STEP_REQUIRED));
 					system("pause");
@@ -1698,7 +1740,7 @@ reenter:
 						minor++;
 						if (minor > entryamount) { minor = 1;major++; }
 						//printf("Now: %d %d\n", i, j);fflush(stdout);
-						SaveImage(areainfo[0][vis_[i][j] - 1].x, areainfo[0][vis_[i][j] - 1].y, areainfo[1][vis_[i][j] - 1].x, areainfo[1][vis_[i][j] - 1].y,major,minor);
+						SaveImage(areainfo[0][vis_[i][j] - 1].x, areainfo[0][vis_[i][j] - 1].y, areainfo[1][vis_[i][j] - 1].x, areainfo[1][vis_[i][j] - 1].y,major,minor, "output/export_");
 						/*int tt,ss;
 						tt = (areainfo[0][vis[i][j] - 1].x + areainfo[1][vis[i][j] - 1].x) / 2;ss = (areainfo[0][vis[i][j] - 1].y + areainfo[1][vis[i][j] - 1].y) / 2;
 						i = tt;j = ss;*/
@@ -1714,14 +1756,82 @@ reenter:
 						i = pp;j = qq;
 					}
 				}
+			if (!usegui) {
+				printf(getPromptText(NOGUI_EXPORT_DONE));
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin(getPromptText(GUI_EXPORT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_EXPORT_DONE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
+		}
+		else if (op == 11 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_SAVESAMPLE)))) 
+		{
+			if (!usegui) {
+				system("cls");
+				printf(getPromptText(NOGUI_SAVESAMPLE));
+			}
+			if (!areainfo[0].size()) {
+				
+				if (!usegui) {
+					printf(getPromptText(NOGUI_PICKSAMPLE_PREVIOUS_STEP_REQUIRED));
+					system("pause");
+					goto remenu;
+				}
+				else {
+					while (msg.message != WM_QUIT) {
+						if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+							::TranslateMessage(&msg);
+							::DispatchMessage(&msg);
+							continue;
+						}
+
+						doStartFrame();
+						ImGui::Begin(getPromptText(GUI_PROMPT_ERROR), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+						ImGui::Text(getPromptText(GUI_PICKSAMPLE_PREVIOUS_STEP_REQUIRED));
+						if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
+						doEndFrame();
+					}
+				}
+			}
+			for (int i = 0;i < 13;i++) 	{
+				if (!id[i]) continue;
+				SaveImage(cainfo[0][id[i] - 1].x, cainfo[0][id[i] - 1].y, cainfo[1][id[i] - 1].x, cainfo[1][id[i] - 1].y,i,1,"samples/sample");
+			}
+			if (!usegui) {
+				printf(getPromptText(NOGUI_SCANCONNECTIVE_DONE));
+			}
+			else {
+				while (msg.message != WM_QUIT) {
+					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+						::TranslateMessage(&msg);
+						::DispatchMessage(&msg);
+						continue;
+					}
+					doStartFrame();
+					ImGui::Begin(getPromptText(GUI_SAVESAMPLE), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::Text(getPromptText(GUI_EXPORT_DONE));
+					if (ImGui::Button(getPromptText(GUI_BUTTON_CONFIRM))) { doEndFrame();goto remenu; }
+					doEndFrame();
+				}
+			}
 		}
 		else if (op == 99 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_EXIT)))) {
 			return 0;
 		}
 		else if (op == 999 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_ABOUT)))) {
-			if (!usegui) {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
+			if (!usegui) {//WHEN YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
 				//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
-				printf("Version: %s\n", "2.2.1 Beta");
+				printf("Version: %s\n", "2.3.0 Beta");
 				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
 				printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 				printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
@@ -1735,7 +1845,7 @@ reenter:
 				system("pause");
 				goto remenu;
 			}
-			else {//AS YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE ABOVE AS WELL
+			else {//WHEN YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE ABOVE AS WELL
 				while (msg.message != WM_QUIT) {
 					if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
 						::TranslateMessage(&msg);
@@ -1745,7 +1855,7 @@ reenter:
 					doStartFrame();
 					ImGui::Begin(getPromptText(GUI_ABOUT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
 					//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
-					ImGui::Text("Version: %s\n", "2.2.1 Beta");
+					ImGui::Text("Version: %s\n", "2.3.0 Beta");
 					ImGui::Text("Copyright (C) ksyx 2019, licensed under MIT license.\n");
 					ImGui::Text("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 					ImGui::Text("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");

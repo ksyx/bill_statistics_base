@@ -21,6 +21,9 @@ enum promptName {
 	NOGUI_OPTION_SCANTEXTAREA,
 	NOGUI_OPTION_PICKSAMPLE,
 	NOGUI_OPTION_DORECOGNIZE,
+	NOGUI_OPTION_EXPORT,
+	NOGUI_OPTION_SAVESAMPLE,
+	NOGUI_OPTION_LOADSAMPLE,
 	NOGUI_OPTION_EXIT,
 	NOGUI_OPTION_ABOUT,
 	NOGUI_MAIN_MENU_PROMPT_CHOOSE,
@@ -37,6 +40,8 @@ enum promptName {
 	GUI_OPTION_PICKSAMPLE,
 	GUI_OPTION_DORECOGNIZE,
 	GUI_OPTION_EXPORT,
+	GUI_OPTION_SAVESAMPLE,
+	GUI_OPTION_LOADSAMPLE,
 	GUI_OPTION_EXIT,
 	GUI_OPTION_ABOUT,
 	NOGUI_LOADIMG,
@@ -163,7 +168,13 @@ enum promptName {
 	GUI_PROMPT_INPUT,
 	GUI_EXPORT_PROMPT_ENTRYNUM_INPUT,
 	NOGUI_EXPORT_INVAILDINPUT,
-	GUI_EXPORT_INVAILDINPUT
+	GUI_EXPORT_INVAILDINPUT,
+	NOGUI_EXPORT_DONE,
+	GUI_EXPORT_DONE,
+	NOGUI_SAVESAMPLE,
+	GUI_SAVESAMPLE,
+	NOGUI_LOADSAMPLE,
+	GUI_LOADSAMPLE
 };
 const std::string promptData0[] = {
 	"Would you like to use GUI? 0 for no, others for yes: ",
@@ -184,6 +195,9 @@ const std::string promptData0[] = {
 	" 7. Automatic Text Areas Detecting\n",
 	" 8. Picking Samples\n",
 	" 9. Do Recognize\n",
+	" 10. Export Text Images\n",
+	" 11. Save Samples\n",
+	" 12. Load Samples",
 	" 99. Exit\n",
 	" 999. About\n",
 	"Your Choice: ",
@@ -199,7 +213,9 @@ const std::string promptData0[] = {
 	"Automatic Text Areas Detecting",
 	"Picking Samples",
 	"Do Recognize",
-	"Export Text Images",
+	"[Export Text Images]",
+	"[Save Samples]",
+	"[Load Samples]",
 	"Exit",
 	"About",
 	"[Load Image]\n",
@@ -324,8 +340,14 @@ const std::string promptData0[] = {
 	"Please input the number of entries in each data: ",
 	"Input",
 	"Please input the number of entries in each data.",
+	"Invaild Input.\n",
 	"Invaild Input.",
-	"Invaild Input."
+	"Operation done.\n",
+	"Operation done. Click the button below to go back to main menu.",
+	"[Save Samples]\n",
+	"Save Samples",
+	"[Load Samples]\n",
+	"Load Samples"
 };
 
 const std::string promptData1[] = {
@@ -347,6 +369,9 @@ const std::string promptData1[] = {
 	" 7. 检测文字区域\n",
 	" 8. 采样\n",
 	" 9. 识别\n",
+	"[10]. 导出文本图像\n",
+	"[11]. 储存采样数据\n",
+	"[12]. 读取采样数据\n",
 	" 99. 退出\n",
 	" 999. 关于\n",
 	"你的选择： ",
@@ -362,7 +387,9 @@ const std::string promptData1[] = {
 	u8"检测文字区域",
 	u8"采样",
 	u8"识别",
-	u8"导出文本图像",
+	u8"[导出文本图像]",
+	u8"[储存采样数据]",
+	u8"[读取采样数据]",
 	u8"退出",
 	u8"关于",
 	"[读取图像]\n",
@@ -431,7 +458,7 @@ const std::string promptData1[] = {
 	"联通块检测",
 	"已完成，请按回车键确认。\n",
 	u8"扫描联通块",
-	u8"已完成，请按回车键确认。",
+	u8"已完成。请按回车键继续。",
 	"[自动文字区域检测]\n",
 	"错误：联通块尚未检测。n",
 	u8"联通块尚未检测。",
@@ -488,7 +515,13 @@ const std::string promptData1[] = {
 	u8"输入",
 	u8"请输入各项中数据数。",
 	"无效输入。",
-	u8"无效输入。"
+	u8"无效输入。",
+	"操作完成。",
+	u8"操作完成，请点击下方按钮返回主菜单。",
+	"[存储样本数据]\n",
+	u8"存储样本数据",
+	"[读取样本数据]\n",
+	u8"读取样本数据"
 };
 
 const char* getPromptText(int promptID) {
