@@ -43,7 +43,8 @@ struct data {
 	}
 };
 int op, WinWidth = 680, WinHeight = 480;std::string str;cv::Mat mat1, mat2, canv, textarea, org, pp, fetchshow, show, passby, bicolor;cv::Rect rect, fetch;std::string WindowName;bool confirmed;
-int minx, miny, maxx, maxy, cntsa, cntsa_, trans, range[2][2];double positive, negative;bool fetched;
+int minx, miny, maxx, maxy, cntsa, cntsa_, trans, range[2][2];double positive, negative, proba;bool fetched;
+int xzoom=100, yzoom=100, matchMethod=5;
 std::vector<std::vector<int> >imgdata;
 std::vector<std::vector<int> >vis;
 std::vector<std::vector<int> >imgdata_;
@@ -458,13 +459,23 @@ void on_recognize_mouse(int event, int x, int y, int flags, void* ustc) {
 }
 double CalcSSIM() {
 	double mu1 = 0, mu2 = 0, sig1 = 0, sig2 = 0, tosig = 0, k1, k2;//sig: sigma, tosig: together sigma
-	k1 = (double)std::min(mat1.rows, mat2.rows) / std::max(mat1.rows, mat2.rows);
-	k2 = (double)std::min(mat1.cols, mat2.cols) / std::max(mat1.cols, mat2.cols);
+	k1 = (double)std::max(mat1.rows, mat2.rows) / std::min(mat1.rows, mat2.rows);
+	k2 = (double)std::max(mat1.cols, mat2.cols) / std::min(mat1.cols, mat2.cols);
+	if (k1 > 3 || k2 > 3) return -1;//Skip this calculation
 	k1 = k1 * k2;
 	int a = std::max(mat1.rows, mat2.rows), b = std::max(mat1.cols, mat2.cols);
+	a *= xzoom;b *= yzoom;
 	//printf("%d %d %d %d\n",mat1.cols,mat1.rows,mat2.cols,mat2.rows);
 	cv::resize(mat2, mat2, cv::Size(b, a), 0, 0, 1);
 	cv::resize(mat1, mat1, cv::Size(b, a), 0, 0, 1);
+	cv::Mat result;
+	result.create(1, 1, CV_32FC1);
+	cv::matchTemplate(mat1, mat2, result, matchMethod);
+	double ret,waste;
+	cv::minMaxLoc(result, &waste, &ret);
+	if (matchMethod <= 1) std::swap(waste, ret);
+	return (ret*0.5+0.5)*1000;
+	//return (double)v*1000 / (a * b);
 	//cv::imshow("a",mat1);
 	//cv::imshow("b",mat2);
 	//cv::waitKey(0);
@@ -494,14 +505,16 @@ double CalcSSIM() {
 	//printf("%lf %lf\n",((tosig+32)/(sig1*sig2+32)*1)+(k1*0));
 	//return tosig;
 	tosig = sqrt(tosig);
-	return ((tosig + 32) / (sig1 * sig2 + 32) * 1) + (k1 * 0);
+	//return 1000*((tosig + 32) / (sig1 * sig2 + 32) * 1) + (k1 * 0);
 	double c1 = 0.0004, c2 = 0.00001296, c3 = 0.00000648;
 	//printf("<%lf>%lf or %lf\n",tosig,((2*mu1*mu2+c1)*(2*tosig+c2))/((mu1*mu1+mu2*mu2+c1)*(sig1*sig1+sig2*sig2+c2))*k1,((2*mu1*mu2+c1)*(2*tosig+c2))/((mu1*mu1+mu2*mu2+c1)*(sig1*sig1+sig2*sig2+c2)));
+	//return (tosig + c3)*1000 / (sig1 * sig2 + c3);
 	return ((2 * mu1 * mu2 + c1) * (2 * tosig + c2)) / ((mu1 * mu1 + mu2 * mu2 + c1) * (sig1 * sig1 + sig2 * sig2 + c2)) * k1;
 }
 int GetResponse(int x1, int y1, int x2, int y2) {
 	//printf("%d %d %d %d\n",x1,y1,x2,y2);
 	double max = -1, ret;int maxid = -1;
+	proba = 0;
 	for (int i = 0;i < 13;i++) {
 		if (!id[i]) continue;
 		/*
@@ -528,6 +541,7 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 		}
 		//printf("Possbility of %d: ",i);
 		ret = CalcSSIM();
+		//printf("%lf", ret / 1000);
 		if (ret > max) {
 			max = ret;
 			maxid = i;
@@ -540,6 +554,7 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 	//cv::imshow("aaa",show);
 	//cv::waitKey(0);
 	//printf("This is %d\n",maxid);
+	proba = max;
 	return maxid;
 }
 void SaveImage(int x1, int y1, int x2, int y2,int major,int minor,std::string filenameprefix) {
@@ -1462,6 +1477,7 @@ redetect:
 				}
 			}
 			visca.clear();visarea.clear();textinfo.clear();
+			bool fflag = 0;
 rechoose:
 			for (int i = 0;i < 2;i++) {
 				if (!usegui) {
@@ -1485,7 +1501,7 @@ rechoose:
 				passby = bicolor;
 				trans = i;
 				WindowName = getPromptText(CV_DORECOGNIZE_WINDOWNAME);
-				rect = cv::Rect(0, 0, WinWidth, WinHeight);
+				if (!fflag) { fflag = 1;rect = cv::Rect(0, 0, WinWidth, WinHeight); }
 				show = bicolor(rect);
 				cv::imshow(getPromptText(CV_DORECOGNIZE_WINDOWNAME), show);
 				cv::setMouseCallback(WindowName, on_recognize_mouse);
@@ -1516,12 +1532,17 @@ rechoose:
 					}
 				}
 			}
+			cv::Mat probaimg;
+			//probaimg = bicolor.clone();
+			cv::cvtColor(bicolor, probaimg, 8);
 			for (int i = 0;i <= cntsa;i++)
 				visca.push_back(0);
 			for (int i = 0;i <= cntsa_;i++) {
 				visarea.push_back(0);
 				textinfo.push_back(pq_emp);
 			}
+			//printf("Method? 0-5");
+			//scanf("%d", &matchMethod);
 			//printf("%d %d %d %d\n",range[0][0],range[0][1],range[1][0],range[1][1]);
 			for (int i = range[0][0];i <= range[1][0];i++)
 				for (int j = range[0][1];j <= range[1][1];j++) {
@@ -1537,12 +1558,22 @@ rechoose:
 							continue;
 						}
 						data tmp;
+						proba /= 1000;
+						cv::rectangle(probaimg, cv::Rect(cainfo[0][vis[i][j] - 1].y, cainfo[0][vis[i][j] - 1].x, cainfo[1][vis[i][j] - 1].y - cainfo[0][vis[i][j] - 1].y + 1, cainfo[1][vis[i][j] - 1].x - cainfo[0][vis[i][j] - 1].x + 1), cv::Scalar(0, (proba) * 255, (1 - proba) * 255), 3);
+						show = probaimg(rect);
+						cv::imshow("ProbabilityGraph", show);
+						cv::setMouseCallback("ProbabilityGraph", on_mouse);
+						cv::waitKey(20);
 						tmp.x = v;tmp.y = cainfo[0][vis[i][j] - 1].y;
 						textinfo[vis_[i][j]].push(tmp);
-						//printf("%d %d At area %d, Add %d with Y=%d\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y);
+						printf("%d %d At area %d, Add %d with Y=%d: Probability=%lf\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y,proba);
 						i = pp;j = qq;
 					}
 				}
+			show = probaimg(rect);
+			cv::imshow("ProbabilityGraph", show);
+			cv::waitKey(0);
+			cv::destroyAllWindows();
 			std::string tmp;
 			if (!usegui)printf(getPromptText(NOGUI_DORECOGNIZE_ORIGINALENTRIES));
 			if (usegui) resultvec.clear();
