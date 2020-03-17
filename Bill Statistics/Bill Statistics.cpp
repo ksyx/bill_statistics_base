@@ -44,7 +44,8 @@ struct data {
 };
 int op, WinWidth = 680, WinHeight = 480;std::string str;cv::Mat mat1, mat2, canv, textarea, org, pp, fetchshow, show, passby, bicolor;cv::Rect rect, fetch;std::string WindowName;bool confirmed;
 int minx, miny, maxx, maxy, cntsa, cntsa_, trans, range[2][2];double positive, negative, proba;bool fetched;
-int xzoom=100, yzoom=100, matchMethod=5;
+int xzoom = 100, yzoom = 100, matchMethod = 4;
+int totalWork, currentWork;
 std::vector<std::vector<int> >imgdata;
 std::vector<std::vector<int> >vis;
 std::vector<std::vector<int> >imgdata_;
@@ -63,7 +64,7 @@ bool usegui;bool frameend;std::string finalresult;
 ImGuiIO tmpio;
 WNDCLASSEX wc;HWND hwnd;ImGuiIO& io = tmpio;ImVec4 clear_color;MSG msg;
 // Helper functions
-
+void updateProgress(int main, int sub);
 bool CreateDeviceD3D(HWND hWnd) {
 	if ((g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
 		return false;
@@ -461,7 +462,8 @@ double CalcSSIM() {
 	double mu1 = 0, mu2 = 0, sig1 = 0, sig2 = 0, tosig = 0, k1, k2;//sig: sigma, tosig: together sigma
 	k1 = (double)std::max(mat1.rows, mat2.rows) / std::min(mat1.rows, mat2.rows);
 	k2 = (double)std::max(mat1.cols, mat2.cols) / std::min(mat1.cols, mat2.cols);
-	if (k1 > 3 || k2 > 3) return -1;//Skip this calculation
+	//printf("%lf %lf\n", k1, k2);
+	if (k1 >= 1.2 || k2 >= 1.2) return -1;//Skip this calculation
 	k1 = k1 * k2;
 	int a = std::max(mat1.rows, mat2.rows), b = std::max(mat1.cols, mat2.cols);
 	a *= xzoom;b *= yzoom;
@@ -475,6 +477,10 @@ double CalcSSIM() {
 	cv::minMaxLoc(result, &waste, &ret);
 	if (matchMethod <= 1) std::swap(waste, ret);
 	return (ret*0.5+0.5)*1000;
+
+
+
+
 	//return (double)v*1000 / (a * b);
 	//cv::imshow("a",mat1);
 	//cv::imshow("b",mat2);
@@ -517,6 +523,7 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 	proba = 0;
 	for (int i = 0;i < 13;i++) {
 		if (!id[i]) continue;
+		updateProgress(0, i + 1);
 		/*
 		DEBUGGING
 		//[RectCurrent]rect=cv::Rect(y1,x1,y2-y1,x2-x1);
@@ -541,7 +548,7 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 		}
 		//printf("Possbility of %d: ",i);
 		ret = CalcSSIM();
-		//printf("%lf", ret / 1000);
+		//printf("%lf\n", ret / 1000);
 		if (ret > max) {
 			max = ret;
 			maxid = i;
@@ -631,6 +638,27 @@ void Accumulate(std::string str) {
 	ret += awa;
 accu:
 	if (change) negative += ret; else positive += ret;
+}
+void updateProgress(int main, int sub) {
+	if (main == 0) main = currentWork; else currentWork = main;
+	system("cls");
+	int i;
+	printf("MAIN [");
+	for (i = 1;i <= (double)(main) / totalWork * 10;i++) {
+		printf("*");
+	}
+	for (;i <= 10;i++) {
+		printf(" ");
+	}
+	printf("] %d\%\n", (int)((double)(main) / totalWork * 100));
+	printf("SUB [");
+	for (i = 1;i <= (double)(sub) / 13 * 10;i++) {
+		printf("*");
+	}
+	for (;i <= 10;i++) {
+		printf(" ");
+	}
+	printf("] %d\%\n", (int)((double)(sub) / 13 * 10));
 }
 int main() {
 	// Create application window
@@ -731,7 +759,7 @@ int main() {
 		frameend = 0;
 		doStartFrame();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (0 && show_demo_window)
+		if (show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
 
 
@@ -1036,7 +1064,8 @@ reloadimg:
 					}
 				}
 			}
-			passby.copyTo(bicolor);
+			cv::GaussianBlur(passby, bicolor, cv::Size(0, 0), 1);
+			
 			confirmed = 1;
 			if (!usegui) {
 				printf(getPromptText(NOGUI_CONFIRMBINARIZE_OPERATION_COMPLETE));
@@ -1106,7 +1135,7 @@ reloadimg_:
 			for (int i = 0;i < bicolor.rows;i++) {
 				imgdata.push_back(emp);
 				for (int j = 0;j < bicolor.cols;j++) {
-					imgdata[i].push_back((bool)(bicolor.at<uchar>(i, j) == 0));
+					imgdata[i].push_back((bool)(bicolor.at<uchar>(i, j) < 127));
 				}
 			}
 			if (!usegui) {
@@ -1348,7 +1377,7 @@ redetect:
 			for (int i = 0;i < bicolor.rows;i++) {
 				imgdata_.push_back(emp);
 				for (int j = 0;j < bicolor.cols;j++) {
-					imgdata_[i].push_back((bool)(textarea.at<uchar>(i, j) == 0));
+					imgdata_[i].push_back((bool)(textarea.at<uchar>(i, j) < 127));
 				}
 			}
 
@@ -1544,8 +1573,13 @@ rechoose:
 			//printf("Method? 0-5");
 			//scanf("%d", &matchMethod);
 			//printf("%d %d %d %d\n",range[0][0],range[0][1],range[1][0],range[1][1]);
+			int cnt = 0;
+			int width = range[1][0] - range[0][0];
+			totalWork = (range[1][0] - range[0][0]) * (range[1][1] - range[0][1]);
+			updateProgress(0, 0);
 			for (int i = range[0][0];i <= range[1][0];i++)
 				for (int j = range[0][1];j <= range[1][1];j++) {
+					cnt++;
 					//printf("%d %d %d %d %d | %d %d\n",i,j,imgdata[i][j],visarea[vis_[i][j]],visca[vis[i][j]], vis_[i][j],vis[i][j]);
 					if (imgdata[i][j] && vis[i][j] && vis_[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
 						int pp = i, qq = j;
@@ -1566,13 +1600,13 @@ rechoose:
 						cv::waitKey(20);
 						tmp.x = v;tmp.y = cainfo[0][vis[i][j] - 1].y;
 						textinfo[vis_[i][j]].push(tmp);
+						updateProgress(cnt, 0);
 						printf("%d %d At area %d, Add %d with Y=%d: Probability=%lf\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y,proba);
 						i = pp;j = qq;
 					}
 				}
+			updateProgress(totalWork, 13);
 			show = probaimg(rect);
-			cv::imshow("ProbabilityGraph", show);
-			cv::waitKey(0);
 			cv::destroyAllWindows();
 			std::string tmp;
 			if (!usegui)printf(getPromptText(NOGUI_DORECOGNIZE_ORIGINALENTRIES));
