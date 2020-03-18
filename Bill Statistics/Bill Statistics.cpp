@@ -524,6 +524,24 @@ int GetResponse(int x1, int y1, int x2, int y2) {
 	for (int i = 0;i < 13;i++) {
 		if (!id[i]) continue;
 		updateProgress(0, i + 1);
+		if (usegui) {
+			for (int rr = 0;rr < 60;rr++) {
+				if (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+					::TranslateMessage(&msg);
+					::DispatchMessage(&msg);
+					continue;
+				}
+				doStartFrame();
+				ImGui::Begin("Progress", NULL);
+				ImGui::ProgressBar((double)currentWork / totalWork);
+				ImGui::SameLine();
+				ImGui::Text("Main");
+				ImGui::ProgressBar((double)i / 13);
+				ImGui::SameLine();
+				ImGui::Text("Char");
+				doEndFrame();
+			}
+		}
 		/*
 		DEBUGGING
 		//[RectCurrent]rect=cv::Rect(y1,x1,y2-y1,x2-x1);
@@ -712,7 +730,7 @@ int main() {
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
+	ImGui::StyleColorsLight();
 	//ImGui::StyleColorsClassic();
 
 	// Setup Platform/Renderer bindings
@@ -759,7 +777,7 @@ int main() {
 		frameend = 0;
 		doStartFrame();
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (show_demo_window)
+		if (0 & show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
 
 
@@ -1579,13 +1597,13 @@ rechoose:
 			updateProgress(0, 0);
 			for (int i = range[0][0];i <= range[1][0];i++)
 				for (int j = range[0][1];j <= range[1][1];j++) {
-					cnt++;
+					cnt++;			
 					//printf("%d %d %d %d %d | %d %d\n",i,j,imgdata[i][j],visarea[vis_[i][j]],visca[vis[i][j]], vis_[i][j],vis[i][j]);
 					if (imgdata[i][j] && vis[i][j] && vis_[i][j] && !visarea[vis_[i][j]] && !visca[vis[i][j]]) {
+						updateProgress(cnt, 0);
 						int pp = i, qq = j;
 						int v = GetResponse(cainfo[0][vis[i][j] - 1].x, cainfo[0][vis[i][j] - 1].y, cainfo[1][vis[i][j] - 1].x, cainfo[1][vis[i][j] - 1].y);
 						i = (cainfo[0][vis[i][j] - 1].x + cainfo[1][vis[i][j] - 1].x) / 2;j = (cainfo[0][vis[i][j] - 1].y + cainfo[1][vis[i][j] - 1].y) / 2;
-
 						visca[vis[i][j]] = 1;
 						if (v == -1) {
 							visarea[vis_[i][j]] = 1;
@@ -1600,11 +1618,12 @@ rechoose:
 						cv::waitKey(20);
 						tmp.x = v;tmp.y = cainfo[0][vis[i][j] - 1].y;
 						textinfo[vis_[i][j]].push(tmp);
-						updateProgress(cnt, 0);
 						printf("%d %d At area %d, Add %d with Y=%d: Probability=%lf\n",i,j,vis_[i][j],v,cainfo[0][vis[i][j]-1].y,proba);
 						i = pp;j = qq;
 					}
+					
 				}
+			
 			updateProgress(totalWork, 13);
 			show = probaimg(rect);
 			cv::destroyAllWindows();
@@ -1869,7 +1888,7 @@ reenter:
 				}
 			}
 			for (int i = 0;i < 13;i++) 	{
-				if (!id[i]) continue;
+				if (id[i] <= 0) continue;
 				SaveImage(cainfo[0][id[i] - 1].x, cainfo[0][id[i] - 1].y, cainfo[1][id[i] - 1].x, cainfo[1][id[i] - 1].y,i,1,"samples/sample");
 			}
 			if (!usegui) {
@@ -1896,8 +1915,8 @@ reenter:
 		else if (op == 999 || (usegui && ImGui::Button(getPromptText(GUI_OPTION_ABOUT)))) {
 			if (!usegui) {//WHEN YOU CHANGE INFO IN THIS CASE, CHANGE THE ONE BELOW AS WELL
 				//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
-				printf("Version: %s\n", "2.3.0 Beta");
-				printf("Copyright (C) ksyx 2019, all rights reserved. This software is under MIT license.\n");
+				printf("Version: %s\n", "2.5.0 Beta");
+				printf("Copyright (C) ksyx 2019-2020, all rights reserved. This software is under MIT license.\n");
 				printf("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 				printf("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
 				printf("Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.\n");
@@ -1920,8 +1939,8 @@ reenter:
 					doStartFrame();
 					ImGui::Begin(getPromptText(GUI_ABOUT), NULL, ImGuiWindowFlags_AlwaysAutoResize);
 					//THE FOLLOWING CONTENTS WILL NOT BE TRANSLATED
-					ImGui::Text("Version: %s\n", "2.3.0 Beta");
-					ImGui::Text("Copyright (C) ksyx 2019, licensed under MIT license.\n");
+					ImGui::Text("Version: %s\n", "2.5.0 Beta");
+					ImGui::Text("Copyright (C) ksyx 2019-2020, licensed under MIT license.\n");
 					ImGui::Text("This product used OpenCV library, thanks OpenCV group for providing such a good library.\n");
 					ImGui::Text("Copyright (C) 2000-2019, Intel Corporation, all rights reserved.\n");
 					ImGui::Text("Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.\n");
